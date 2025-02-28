@@ -1,0 +1,427 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  /* 布局容器 */
+  .page-container {
+    @apply container py-6 animate-fadeIn;
+  }
+  
+  .content-container {
+    @apply max-w-6xl mx-auto backdrop-blur-sm;
+  }
+  
+  .content-container-sm {
+    @apply max-w-4xl mx-auto backdrop-blur-sm;
+  }
+  
+  .content-container-xs {
+    @apply max-w-2xl mx-auto backdrop-blur-sm;
+  }
+  
+  /* 页面标题 */
+  .page-title {
+    @apply text-2xl font-bold mb-6 relative pb-2 inline-block;
+  }
+  
+  .page-title::after {
+    @apply content-[''] absolute left-0 bottom-0 w-2/3 h-1 rounded-full;
+    background-color: rgb(var(--accent-color));
+  }
+  
+  /* 卡片样式 */
+  .card {
+    @apply bg-gray-800/90 rounded-lg shadow-lg overflow-hidden
+           transition-all duration-300 hover:shadow-xl border border-gray-700/30
+           backdrop-blur-md hover:backdrop-blur-lg;
+  }
+  
+  .card-header {
+    @apply px-6 py-4 border-b border-gray-700 bg-gray-700/50;
+  }
+  
+  .card-body {
+    @apply p-6 bg-gray-800/90;
+  }
+  
+  .card-footer {
+    @apply px-6 py-4 bg-gray-700/80 border-t border-gray-600;
+  }
+  
+  /* 表单样式 */
+  .form-input {
+    @apply w-full px-3 py-2 border border-gray-600 rounded-md 
+           shadow-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-color))/50] focus:border-[rgb(var(--accent-color))] 
+           bg-gray-700 text-white transition-all duration-200;
+  }
+  
+  .form-select {
+    @apply px-3 py-2 border border-gray-600 rounded-md 
+           shadow-sm focus:outline-none focus:ring-2 focus:ring-[rgb(var(--accent-color))/50] focus:border-[rgb(var(--accent-color))] 
+           bg-gray-700 text-white transition-all duration-200;
+  }
+  
+  .form-label {
+    @apply block text-sm font-medium text-gray-300 mb-1;
+  }
+  
+  /* 按钮样式 */
+  .btn {
+    @apply inline-flex items-center px-4 py-2 border border-transparent 
+           rounded-md shadow-sm text-sm font-medium focus:outline-none
+           focus:ring-2 focus:ring-[rgba(var(--accent-color),0.6)] focus:ring-offset-2 
+           transition-all duration-200 transform hover:scale-105 active:scale-95;
+  }
+  
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+  
+  .btn-primary {
+    @apply text-white bg-gradient-to-r from-[rgb(var(--accent-gradient-from))] to-[rgb(var(--accent-gradient-to))] 
+    hover:shadow-[0_0_15px_rgba(var(--accent-color),0.5)];
+  }
+  
+  .btn-success {
+    @apply text-white;
+    background: linear-gradient(to right, rgb(var(--success-color, 34, 197, 94)), rgb(var(--success-color-dark, 22, 163, 74)));
+  }
+  
+  .btn-success:hover {
+    background: linear-gradient(to right, rgb(var(--success-color-dark, 22, 163, 74)), rgb(var(--success-color-darker, 21, 128, 61)));
+    @apply shadow-[0_0_15px_rgba(var(--success-color,34,197,94),0.5)];
+  }
+  
+  .btn-secondary {
+    @apply bg-gray-700 text-gray-100
+           border border-gray-600 hover:bg-gray-600
+           hover:border-[rgba(var(--accent-color),0.5)];
+  }
+  
+  /* 状态徽章 */
+  .badge {
+    @apply px-2.5 py-0.5 rounded-full text-xs font-medium transition-all duration-200;
+  }
+  
+  .badge-info {
+    @apply border;
+    background-color: rgba(var(--info-color, 59, 130, 246), 0.1);
+    color: rgb(var(--info-color, 59, 130, 246));
+    border-color: rgba(var(--info-color, 59, 130, 246), 0.3);
+  }
+  
+  .badge-success {
+    @apply bg-green-900/30 text-green-300 border;
+    border-color: rgba(var(--success-color, 34, 197, 94), 0.3);
+  }
+  
+  .badge-warning {
+    @apply bg-yellow-900/30 text-yellow-300 border;
+    border-color: rgba(var(--warning-color, 245, 158, 11), 0.3);
+  }
+  
+  .badge-error {
+    @apply bg-red-900/30 text-red-300 border;
+    border-color: rgba(var(--danger-color, 239, 68, 68), 0.3);
+  }
+  
+  /* 加载指示器 */
+  .loading-spinner {
+    @apply animate-spin h-5 w-5 text-[rgb(var(--accent-color))];
+  }
+  
+  /* 消息提示 */
+  .alert {
+    @apply p-4 mb-6 rounded-md border transition-all duration-300 animate-fadeIn;
+  }
+  
+  .alert-success {
+    @apply border;
+    background-color: rgba(var(--success-color, 34, 197, 94), 0.1);
+    color: rgb(var(--success-color, 34, 197, 94));
+    border-color: rgba(var(--success-color, 34, 197, 94), 0.3);
+  }
+  
+  .alert-error {
+    @apply border;
+    background-color: rgba(var(--danger-color, 239, 68, 68), 0.1);
+    color: rgb(var(--danger-color, 239, 68, 68));
+    border-color: rgba(var(--danger-color, 239, 68, 68), 0.3);
+  }
+  
+  /* 表格样式 */
+  .table-container {
+    @apply overflow-x-auto rounded-md;
+  }
+  
+  .table {
+    @apply w-full;
+  }
+  
+  .table-header {
+    @apply bg-gray-800 text-gray-400 
+           uppercase text-xs font-medium tracking-wider;
+  }
+  
+  .table-header-cell {
+    @apply py-3 px-4 text-left border-b border-gray-700;
+  }
+  
+  .table-row {
+    @apply hover:bg-gray-800/50 transition-colors;
+  }
+  
+  .table-row:hover {
+    @apply bg-[rgba(var(--accent-color),0.1)];
+  }
+  
+  .table-cell {
+    @apply py-4 px-4 text-sm text-gray-200 border-b border-gray-700;
+  }
+  
+  /* 添加缺失的类定义 */
+  .card-themed-border {
+    @apply bg-gray-800/80 rounded-lg border border-[rgba(var(--accent-color),0.2)];
+  }
+  
+  /* 添加缺失的文本主题类 */
+  .text-themed {
+    @apply text-[rgb(var(--accent-color))];
+  }
+  
+  /* 添加缺失的背景类 */
+  .bg-themed-5 {
+    @apply bg-[rgba(var(--accent-color),0.05)];
+  }
+}
+
+/* 添加动画 */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+/* 变量与主题 */
+:root {
+  --foreground-rgb: 240, 240, 240;
+  --background-start-rgb: 2, 6, 23;
+  --background-end-rgb: 10, 15, 30;
+  --accent-color: 96, 165, 250;  /* 蓝色亮色调 */
+  --accent-gradient-from: 59, 130, 246;  /* 中蓝色 */
+  --accent-gradient-to: 147, 197, 253;  /* 更亮的蓝色 */
+  --success-color: 34, 197, 94;
+  --success-color-dark: 22, 163, 74;
+  --success-color-darker: 21, 128, 61;
+  --danger-color: 239, 68, 68;
+  --danger-color-dark: 220, 38, 38;
+  --danger-color-darker: 185, 28, 28;
+  --warning-color: 245, 158, 11;
+  --warning-color-dark: 217, 119, 6;
+  --info-color: 96, 165, 250;
+  --info-color-dark: 59, 130, 246;
+}
+
+/* 基础样式 */
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(to bottom, 
+    rgb(var(--background-start-rgb)),
+    rgb(var(--background-end-rgb))
+  ) fixed;
+  background-size: cover;
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 25% 25%, rgba(var(--accent-color), 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 75% 75%, rgba(var(--accent-color), 0.05) 0%, transparent 50%);
+  z-index: -1;
+}
+
+/* 布局容器 */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem;
+}
+
+/* 导航与页眉 */
+.site-header {
+  @apply bg-gray-800/80 shadow-sm backdrop-blur-md sticky top-0 z-40;
+  border-bottom: 1px solid rgba(var(--accent-color), 0.1);
+  box-shadow: 0 4px 20px rgba(var(--accent-color), 0.05);
+}
+
+.header-container {
+  @apply container mx-auto px-4 py-3 flex justify-between items-center;
+}
+
+.site-logo {
+  @apply text-xl font-bold relative;
+  background: linear-gradient(to right, rgb(var(--accent-gradient-from)), rgb(var(--accent-gradient-to)));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.nav-container {
+  @apply flex items-center gap-6 rounded-full px-2 py-1;
+  background-color: rgba(var(--accent-color), 0.03);
+}
+
+/* 页脚 */
+.site-footer {
+  @apply bg-gray-800/80 backdrop-blur-md w-full;
+  border-top: 1px solid rgba(var(--accent-color), 0.1);
+}
+
+.footer-container {
+  @apply container mx-auto px-4 text-center text-sm text-gray-400;
+}
+
+.copyright {
+  @apply text-gray-400 text-sm;
+}
+
+.copyright strong {
+  @apply font-medium;
+  color: rgb(var(--accent-color));
+}
+
+.footer-link {
+  @apply text-gray-400 hover:text-[rgb(var(--accent-color))] mx-2 transition-colors;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-800;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply rounded-full;
+  background: rgba(var(--accent-color), 0.4);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--accent-color), 0.6);
+}
+
+/* 文本选择效果 */
+::selection {
+  @apply bg-[rgba(var(--accent-color),0.2)] text-white;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+/* 确保根布局容器也有完整高度 */
+body > div:first-child {
+  @apply min-h-screen flex flex-col;
+}
+
+/* 确保main-content在任何情况下都会扩展填充可用空间 */
+.main-content {
+  @apply relative z-base pt-0 flex-1 flex flex-col;
+}
+
+/* 为404和错误页面添加特定样式 */
+.error-container {
+  @apply flex-1 flex items-center justify-center;
+}
+
+/* 修改星空背景容器样式 */
+.starfield-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -10;
+  pointer-events: none;
+}
+
+/* 确保头部没有过多间距 */
+.header-container {
+  @apply container mx-auto px-4 py-3 flex justify-between items-center;
+}
+
+/* 确保page-container的顶部内边距合理 */
+.page-container {
+  @apply container py-6 animate-fadeIn;
+}
+
+/* 添加缺失的z-index基本层级 */
+.z-base {
+  z-index: 0;
+}
+
+/* 卡片组件样式 */
+.feature-card {
+  @apply bg-gray-800/80 rounded-lg border border-[rgba(var(--accent-color),0.2)] shadow-[0_0_15px_rgba(var(--accent-color),0.1)] hover:shadow-[0_0_20px_rgba(var(--accent-color),0.2)] transition-all duration-300;
+}
+
+.card-header-themed {
+  @apply bg-gradient-to-r from-[rgba(var(--accent-color),0.1)] to-transparent border-b-2 border-[rgb(var(--accent-color))];
+}
+
+.section-title {
+  @apply text-[rgb(var(--accent-color))] font-bold flex items-center;
+}
+
+.title-indicator {
+  @apply inline-block w-1.5 h-6 mr-2 rounded-sm bg-[rgb(var(--accent-color))];
+}
+
+.nav-item {
+  @apply hover:bg-[rgba(var(--accent-color),0.05)] p-2 rounded-lg transition-colors;
+}
+
+.icon-container {
+  @apply bg-[rgba(var(--accent-color),0.1)] text-[rgb(var(--accent-color))] p-2 rounded-full mr-2;
+}
+
+.description-text {
+  @apply ml-10 text-sm text-gray-600 dark:text-gray-300;
+}
+
+/* 指南卡片样式 */
+.guide-card {
+  @apply relative border-2 border-[rgba(var(--accent-color),0.3)] bg-gradient-to-br from-white/80 to-[rgba(var(--accent-color),0.05)] dark:from-gray-800/80 dark:to-[rgba(var(--accent-color),0.1)] p-6 rounded-lg shadow-lg;
+}
+
+.guide-header {
+  @apply absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-[rgb(var(--accent-gradient-from))] to-[rgb(var(--accent-gradient-to))];
+}
+
+.step-number {
+  @apply flex-shrink-0 w-6 h-6 rounded-full bg-[rgba(var(--accent-color),0.15)] text-[rgb(var(--accent-color))] flex items-center justify-center mr-2 font-bold;
+}
+
+.step-title {
+  @apply text-[rgb(var(--accent-color))];
+}
+

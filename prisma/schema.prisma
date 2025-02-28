@@ -1,0 +1,78 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Subscription {
+  id         String   @id @default(cuid())
+  type       String   // "channel" 或 "playlist"
+  sourceId   String   // YouTube频道ID或播放列表ID
+  name       String   // 频道或播放列表名称
+  lastSync   DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  videos     Video[]
+  thumbnailUrl String?  // 存储频道或播放列表的缩略图URL
+
+  @@unique([type, sourceId])
+}
+
+model Video {
+  id            String        @id @default(cuid())
+  youtubeId     String        @unique
+  title         String
+  titleZh       String?       // 中文标题
+  description   String?       // 原始描述
+  descriptionZh String?       // 中文描述
+  thumbnailUrl  String?
+  publishedAt   DateTime
+  duration      Int?          // 时长（秒）
+  processed     Boolean       @default(false)
+  translationStatus String?  // "pending", "processing", "completed", "failed"
+  translationError  String?  // 错误信息
+  translatedVideoUrl String? // 翻译后的视频URL
+  subscriptionId String
+  subscription  Subscription  @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  channelId     String?       // 频道ID
+  channelTitle  String?       // 频道标题
+
+  @@index([subscriptionId])
+  @@index([youtubeId])
+  @@index([translationStatus])
+  @@index([processed])
+}
+
+model Setting {
+  id    String @id
+  value String
+
+  @@map("settings")
+}
+
+model Log {
+  id        String   @id @default(cuid())
+  level     String   // "error", "warn", "info", "debug"
+  message   String
+  details   String?
+  source    String?  // 添加这个字段，设为可选
+  timestamp DateTime @default(now())
+} 
+
+// 定时任务状态模型
+model TaskStatus {
+  id            String   @id @default(cuid())
+  taskName      String   @unique // 任务名称
+  lastRunTime   DateTime? // 上次运行时间
+  nextRunTime   DateTime? // 下次计划运行时间
+  status        String   // 状态: running, success, failed, idle
+  errorMessage  String?  // 错误信息
+  runCount      Int      @default(0) // 运行次数
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}

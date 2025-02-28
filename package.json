@@ -1,0 +1,49 @@
+{
+  "name": "YTLingoSync",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.11.0",
+    "@radix-ui/react-tabs": "^1.1.3",
+    "@types/fluent-ffmpeg": "^2.1.27",
+    "axios": "^1.7.9",
+    "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
+    "fluent-ffmpeg": "^2.1.3",
+    "googleapis": "^144.0.0",
+    "imap": "^0.8.19",
+    "lucide-react": "^0.476.0",
+    "mailparser": "^3.7.2",
+    "next": "^15.1.7",
+    "node-cron": "^3.0.3",
+    "puppeteer": "^22.4.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-markdown": "^10.0.0",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.0.2"
+  },
+  "devDependencies": {
+    "@types/imap": "^0.8.42",
+    "@types/mailparser": "^3.4.5",
+    "@types/node": "^20.11.24",
+    "@types/node-cron": "^3.0.11",
+    "@types/nodemailer": "^6.4.17",
+    "@types/react": "^18.2.61",
+    "@types/react-dom": "^18.2.19",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^8.57.0",
+    "eslint-config-next": "^15.1.7",
+    "postcss": "^8.4.35",
+    "prisma": "^5.11.0",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.3.3"
+  }
+}
