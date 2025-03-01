@@ -1,7 +1,7 @@
-// 手动触发缺失数据更新任务脚本
+// 手动触发翻译排队视频任务脚本
 const http = require('http');
 
-logger.debug('正在手动触发缺失数据更新任务...');
+logger.debug('正在手动触发翻译排队视频任务...');
 
 // 创建请求选项
 const options = {
@@ -28,7 +28,7 @@ const req = http.request(options, (res) => {
       
       if (res.statusCode === 200) {
         logger.debug('✅ 执行成功!');
-        logger.debug(`更新了 ${response.updated} 条缺失数据`);
+        logger.debug(`更新了 ${response.updated} 条翻译排队视频`);
         logger.debug(`消息: ${response.message}`);
       } else if (res.statusCode === 409) {
         console.warn('⚠️ 警告:', response.message);

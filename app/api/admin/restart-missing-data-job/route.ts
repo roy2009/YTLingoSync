@@ -1,30 +1,30 @@
 import { NextResponse } from 'next/server';
-import { startMissingDataUpdateJob, stopMissingDataUpdateJob } from '@/lib/update-missing-data-job';
+import { startTransPendingVideoUpdateJob, stopTransPendingVideoUpdateJob } from '@/lib/update-trans-pending-video-job';
 import { logger } from '@/lib/logger';
 
 export async function POST() {
   try {
-    logger.debug('正在重启缺失数据更新任务...');
+    logger.debug('正在重启翻译排队视频任务...');
     
     // 先停止现有任务
-    stopMissingDataUpdateJob();
+    stopTransPendingVideoUpdateJob();
     
     // 然后启动新任务
-    const result = await startMissingDataUpdateJob();
+    const result = await startTransPendingVideoUpdateJob();
     
     if (result) {
-      logger.debug('缺失数据更新任务重启成功');
-      return NextResponse.json({ success: true, message: '缺失数据更新任务已重启' });
+      logger.debug('翻译排队视频任务重启成功');
+      return NextResponse.json({ success: true, message: '翻译排队视频任务已重启' });
     } else {
-      logger.warn('缺失数据更新任务重启失败，可能已被禁用');
+      logger.warn('翻译排队视频任务重启失败，可能已被禁用');
       return NextResponse.json(
-        { success: false, message: '缺失数据更新任务重启失败，可能已被禁用' },
+        { success: false, message: '翻译排队视频任务重启失败，可能已被禁用' },
         { status: 400 }
       );
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('重启缺失数据更新任务出错:', errorMessage);
+    logger.error('重启翻译排队视频任务出错:', errorMessage);
     return NextResponse.json(
       { error: '重启失败', message: errorMessage },
       { status: 500 }

@@ -79,8 +79,8 @@ export function TaskMonitorCard() {
         return '视频同步服务';
       case 'HEYGEN_EMAIL_CHECK':
         return 'HeyGen 邮件检查';
-      case 'MISSING_DATA_UPDATE':
-        return '缺失数据更新';
+      case 'TRANS_PENDING_VIDEO':
+        return '翻译排队视频';
       default:
         return taskName;
     }

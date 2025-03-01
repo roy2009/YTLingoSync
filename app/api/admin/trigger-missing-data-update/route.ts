@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateMissingVideoData } from '@/lib/update-missing-data';
+import { updateMissingVideoData } from '@/lib/update-trans-pending-video';
 import { updateTaskStatus, TASK_NAMES } from '@/lib/task-status-service';
 import { logger } from '@/lib/logger';
 
@@ -13,7 +13,7 @@ export async function POST() {
   try {
     // 检查任务是否已在运行，防止重复执行
     if (isRunning) {
-      logger.warn('手动触发的缺失数据更新任务已在运行中，请等待完成');
+      logger.warn('手动触发的翻译排队视频任务已在运行中，请等待完成');
       return NextResponse.json(
         { success: false, message: '任务已在运行中，请稍后再试' },
         { status: 409 }
@@ -27,22 +27,22 @@ export async function POST() {
       // 标记任务开始运行
       isRunning = true;
       
-      logger.debug('手动触发缺失数据更新任务开始执行');
+      logger.debug('手动触发翻译排队视频任务开始执行');
       
       // 更新任务状态为运行中
-      await updateTaskStatus(TASK_NAMES.MISSING_DATA_UPDATE, {
+      await updateTaskStatus(TASK_NAMES.TRANS_PENDING_VIDEO, {
         status: 'running',
-        message: '正在更新缺失数据 (手动触发)'
+        message: '正在翻译排队视频 (手动触发)'
       });
       
       // 设置任务超时保护
       const timeoutPromise = new Promise((_, reject) => {
         timeoutId = setTimeout(() => {
-          reject(new Error('缺失数据更新任务执行超时'));
+          reject(new Error('翻译排队视频任务执行超时'));
         }, DEFAULT_TIMEOUT);
       });
       
-      // 执行缺失数据更新，添加超时保护
+      // 执行翻译排队视频，添加超时保护
       const result = await Promise.race([
         updateMissingVideoData(),
         timeoutPromise
@@ -57,19 +57,19 @@ export async function POST() {
       const nextRunTime = new Date(Date.now() + 15 * 60 * 1000);
       
       // 更新任务状态为成功
-      await updateTaskStatus(TASK_NAMES.MISSING_DATA_UPDATE, {
+      await updateTaskStatus(TASK_NAMES.TRANS_PENDING_VIDEO, {
         lastRun: new Date(),
         nextRun: nextRunTime,
         status: 'idle',
-        message: `已更新 ${updatedCount} 条缺失数据 (手动触发)`
+        message: `已翻译 ${updatedCount} 条翻译排队 (手动触发)`
       });
       
-      logger.debug(`手动触发的缺失数据更新完成: 更新了 ${updatedCount} 条数据`);
+      logger.debug(`手动触发的翻译排队视频完成: 更新了 ${updatedCount} 条数据`);
       
       return NextResponse.json({
         success: true,
         updated: updatedCount,
-        message: `成功更新了 ${updatedCount} 条缺失数据`
+        message: `成功翻译了 ${updatedCount} 条翻译排队`
       });
       
     } catch (error) {
@@ -78,11 +78,11 @@ export async function POST() {
       
       // 记录错误
       const errorMessage = error instanceof Error ? error.message : String(error);
-      logger.error('手动触发的缺失数据更新失败:', errorMessage);
+      logger.error('手动触发的翻译排队视频失败:', errorMessage);
       
       // 更新任务状态为失败
       await updateTaskStatus(
-        TASK_NAMES.MISSING_DATA_UPDATE, 
+        TASK_NAMES.TRANS_PENDING_VIDEO, 
         {
           status: 'failed',
           lastRun: new Date(),
@@ -100,7 +100,7 @@ export async function POST() {
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('处理手动触发缺失数据更新请求时出错:', errorMessage);
+    logger.error('处理手动触发翻译排队视频请求时出错:', errorMessage);
     return NextResponse.json(
       { error: '执行失败', message: errorMessage },
       { status: 500 }

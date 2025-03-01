@@ -1,7 +1,7 @@
-// 重启缺失数据更新任务的脚本
+// 重启翻译排队视频任务的脚本
 const http = require('http');
 
-logger.debug('正在重启缺失数据更新任务...');
+logger.debug('正在重启翻译排队视频任务...');
 
 // 创建请求选项
 const options = {

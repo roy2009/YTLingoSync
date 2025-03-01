@@ -10,7 +10,7 @@ export async function initializeTaskStatus() {
     const taskNames = [
       TASK_NAMES.VIDEO_SYNC,
       TASK_NAMES.HEYGEN_EMAIL_CHECK,
-      TASK_NAMES.MISSING_DATA_UPDATE
+      TASK_NAMES.TRANS_PENDING_VIDEO
     ];
 
     // 为每个任务创建或更新状态记录

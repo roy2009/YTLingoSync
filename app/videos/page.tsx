@@ -463,10 +463,12 @@ function VideosContent() {
     }
     
     const statuses: Record<string, { label: string; color: string }> = {
+      'none': { label: '未翻译', color: 'gray' },
+      'skipped': { label: '未翻译', color: 'gray' },
       'pending': { label: '等待中', color: 'yellow' },
       'processing': { label: '翻译中', color: 'blue' },
       'completed': { label: '已翻译', color: 'green' },
-      'failed': { label: '失败', color: 'red' }
+      'failed': { label: '翻译失败', color: 'red' }
     };
     
     return statuses[video.translationStatus] || { label: '未知', color: 'gray' };

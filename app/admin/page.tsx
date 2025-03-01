@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import UpdateMissingData from './components/UpdateMissingData';
+import UpdateTransPendingVideo from './components/UpdateTransPendingVideo';
 import Link from 'next/link';
 
 export default function AdminPage() {
@@ -18,7 +18,7 @@ export default function AdminPage() {
             </p>
           </div>
         </Link>
-        <UpdateMissingData />
+        <UpdateTransPendingVideo />
         <Link href="/admin/translate-videos" className="card hover:shadow-lg transition-shadow">
           <div className="p-5">
             <h2 className="text-xl font-semibold mb-2">批量翻译视频</h2>

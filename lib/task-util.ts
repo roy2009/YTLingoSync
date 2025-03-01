@@ -48,9 +48,9 @@ export async function getNextRunTimeForTask(taskName: string): Promise<Date> {
       const heygenInterval = settings.HEYGEN_EMAIL_CHECK_INTERVAL || '*/5 * * * *';
       return getNextRunTimeFromCron(heygenInterval, 5);
       
-    case TASK_NAMES.MISSING_DATA_UPDATE:
-      const missingDataInterval = settings.MISSING_DATA_UPDATE_INTERVAL || '0 * * * *';
-      return getNextRunTimeFromCron(missingDataInterval, 15);
+    case TASK_NAMES.TRANS_PENDING_VIDEO:
+      const transPendingVideoInterval = settings.MISSING_DATA_UPDATE_INTERVAL || '0 * * * *';
+      return getNextRunTimeFromCron(transPendingVideoInterval, 15);
       
     default:
       // 未知任务类型，使用默认15分钟

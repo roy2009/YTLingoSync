@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-export default function UpdateMissingData() {
+export default function UpdateTransPendingVideo() {
   const [updating, setUpdating] = useState(false);
   const [message, setMessage] = useState('');
   const [remainingCount, setRemainingCount] = useState<number | null>(null);
@@ -29,7 +29,7 @@ export default function UpdateMissingData() {
     setMessage('正在更新...');
     
     try {
-      const response = await fetch('/api/admin/update-missing-data', {
+      const response = await fetch('/api/admin/update-trans-pending-video', {
         method: 'POST',
       });
       

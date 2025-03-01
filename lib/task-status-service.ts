@@ -6,7 +6,7 @@ import { getNextRunTimeForTask } from './task-util';
 export const TASK_NAMES = {
   VIDEO_SYNC: 'VIDEO_SYNC_SERVICE',
   HEYGEN_EMAIL_CHECK: 'HEYGEN_EMAIL_CHECK',
-  MISSING_DATA_UPDATE: 'MISSING_DATA_UPDATE'
+  TRANS_PENDING_VIDEO: 'TRANS_PENDING_VIDEO'
 };
 
 // 任务状态更新参数类型

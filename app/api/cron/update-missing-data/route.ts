@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateMissingVideoData } from '@/lib/update-missing-data';
+import { updateMissingVideoData } from '@/lib/update-trans-pending-video';
 import { logger } from '@/lib/logger';
 
 // 通过Vercel Cron Jobs每天运行一次

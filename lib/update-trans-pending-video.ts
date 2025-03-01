@@ -122,6 +122,6 @@ export async function updateMissingVideoData() {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logger.error('更新缺失视频数据和提交翻译时发生错误:', errorMessage);
-    throw new Error(`更新缺失数据和提交翻译失败: ${errorMessage}`);
+    throw new Error(`更新翻译排队视频和提交翻译失败: ${errorMessage}`);
   }
 } 

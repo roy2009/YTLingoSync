@@ -3,7 +3,7 @@ import { logger } from './logger';
 import { prisma } from './prisma';
 import { initializeTaskStatus } from './task-init';
 import { startHeyGenEmailCheckJob } from './heygen-cron-job';
-import { startMissingDataUpdateJob } from './update-missing-data-job';
+import { startTransPendingVideoUpdateJob } from './update-trans-pending-video-job';
 
 // 添加一个全局引用，避免定时任务被垃圾回收
 const keepAliveReferences = {
@@ -36,13 +36,13 @@ export async function initializeApp() {
       logger.warn('HeyGen邮件检查服务启动失败，请检查日志了解详情');
     }
     
-    logger.debug('initializeApp() 启动缺失数据更新服务');
-    // 启动缺失数据更新服务
-    const missingDataJobStarted = await startMissingDataUpdateJob();
-    if (missingDataJobStarted) {
-      logger.debug('缺失数据更新服务启动成功');
+    logger.debug('initializeApp() 启动翻译排队视频服务');
+    // 启动翻译排队视频服务
+    const transPendingVideoJobStarted = await startTransPendingVideoUpdateJob();
+    if (transPendingVideoJobStarted) {
+      logger.debug('翻译排队视频服务启动成功');
     } else {
-      logger.warn('缺失数据更新服务启动失败，请检查日志了解详情');
+      logger.warn('翻译排队视频服务启动失败，请检查日志了解详情');
     }
     
     // 添加进程保活定时器，确保定时任务不会因为事件循环空闲而被终止
