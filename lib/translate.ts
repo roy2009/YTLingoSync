@@ -24,20 +24,20 @@ interface TranslationOptions {
 export async function translateText(text: string, targetLang: string = 'Chinese'): Promise<string> {
   try {
     if (isMostlyChinese(text)) {
-      logger.info('文本已经是中文，跳过翻译:', text.substring(0, 30));
+      logger.debug('文本已经是中文，跳过翻译:', text.substring(0, 30));
       return text;
     }
     
-    logger.info(`开始翻译文本: "${text.substring(0, 30)}..."，目标语言: ${targetLang}`);
+    logger.debug(`开始翻译文本: "${text.substring(0, 30)}..."，目标语言: ${targetLang}`);
     
     // 获取设置
     const settingsObj = await getAllEnvSettings();
     
     const translationService = settingsObj.TRANSLATION_SERVICE || 'none';
-    logger.info(`使用翻译服务: ${translationService}`);
+    logger.debug(`使用翻译服务: ${translationService}`);
     
     if (translationService === 'none') {
-      logger.info('翻译服务未启用，返回原文');
+      logger.debug('翻译服务未启用，返回原文');
       return text;
     }
     
@@ -54,16 +54,16 @@ export async function translateText(text: string, targetLang: string = 'Chinese'
     
     // 使用Google免费翻译API
     try {
-      logger.info('正在调用谷歌免费翻译API...');
+      logger.debug('正在调用谷歌免费翻译API...');
       // 将语言名称转换为语言代码
       const langCode = getLanguageCode(targetLang);
-      logger.info(`将语言名称 ${targetLang} 转换为语言代码 ${langCode}`);
+      logger.debug(`将语言名称 ${targetLang} 转换为语言代码 ${langCode}`);
       
       const response = await http.get(
         `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${langCode}&dt=t&q=${encodeURIComponent(text)}`
       );
       
-      logger.info(`翻译API响应: ${JSON.stringify(response.data).substring(0, 200)}...`);
+      logger.debug(`翻译API响应: ${JSON.stringify(response.data).substring(0, 200)}...`);
       
       // 解析Google翻译响应
       if (response.data && Array.isArray(response.data[0])) {
@@ -76,7 +76,7 @@ export async function translateText(text: string, targetLang: string = 'Chinese'
         if (translatedText === text) {
           logger.warn('翻译结果与原文相同，可能翻译失败');
         } else {
-          logger.info(`翻译成功: "${text.substring(0, 30)}..." => "${translatedText.substring(0, 30)}..."`);
+          logger.debug(`翻译成功: "${text.substring(0, 30)}..." => "${translatedText.substring(0, 30)}..."`);
         }
         return translatedText;
       } else {

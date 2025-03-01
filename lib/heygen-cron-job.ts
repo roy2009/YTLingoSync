@@ -23,7 +23,7 @@ export async function startHeyGenEmailCheckJob() {
   try {
     // 停止现有任务（如果有）
     if (heygenCheckJob) {
-      logger.info('正在停止现有的HeyGen邮件检查任务');
+      logger.debug('正在停止现有的HeyGen邮件检查任务');
       heygenCheckJob.stop();
       heygenCheckJob = null;
     }
@@ -32,7 +32,7 @@ export async function startHeyGenEmailCheckJob() {
     const settingsObj = await getAllEnvSettings();
     
     // 检查并输出关键配置信息，方便排错
-    logger.info(`HeyGen邮件检查配置: HEYGEN_EMAIL_CHECK_ENABLED=${settingsObj.HEYGEN_EMAIL_CHECK_ENABLED || '未设置'}`);
+    logger.debug(`HeyGen邮件检查配置: HEYGEN_EMAIL_CHECK_ENABLED=${settingsObj.HEYGEN_EMAIL_CHECK_ENABLED || '未设置'}`);
     
     // 检查是否启用了 HeyGen 邮件检查
     const enabled = settingsObj.HEYGEN_EMAIL_CHECK_ENABLED === 'true';
@@ -43,7 +43,7 @@ export async function startHeyGenEmailCheckJob() {
     
     // 获取检查间隔（默认每5分钟）
     let checkInterval = settingsObj.HEYGEN_EMAIL_CHECK_INTERVAL || '*/5 * * * *';
-    logger.info(`HeyGen邮件检查间隔: ${checkInterval}`);
+    logger.debug(`HeyGen邮件检查间隔: ${checkInterval}`);
     
     // 验证cron表达式是否有效
     if (!nodeCron.validate(checkInterval)) {
@@ -53,9 +53,9 @@ export async function startHeyGenEmailCheckJob() {
     
     // 创建 Cron 任务
     try {
-      logger.info(`正在创建HeyGen邮件检查定时任务，cron表达式: ${checkInterval}`);
+      logger.debug(`正在创建HeyGen邮件检查定时任务，cron表达式: ${checkInterval}`);
       heygenCheckJob = nodeCron.schedule(checkInterval, async () => {
-        logger.info(`触发HeyGen邮件检查定时任务，当前时间: ${new Date().toLocaleString()}`);
+        logger.debug(`触发HeyGen邮件检查定时任务，当前时间: ${new Date().toLocaleString()}`);
         
         // 检查任务是否已在运行，防止重叠执行
         if (isHeygenCheckRunning) {
@@ -77,7 +77,7 @@ export async function startHeyGenEmailCheckJob() {
             }, DEFAULT_TIMEOUT);
           });
           
-          logger.info('执行定期 HeyGen 邮件检查');
+          logger.debug('执行定期 HeyGen 邮件检查');
           
           // 更新任务状态为运行中
           await updateTaskStatus(TASK_NAMES.HEYGEN_EMAIL_CHECK, {
@@ -95,7 +95,7 @@ export async function startHeyGenEmailCheckJob() {
           };
           
           // 记录关键配置(隐藏密码)
-          logger.info(`邮箱配置: ${emailConfig.user}@${emailConfig.host}:${emailConfig.port}, TLS: ${emailConfig.tls}`);
+          logger.debug(`邮箱配置: ${emailConfig.user}@${emailConfig.host}:${emailConfig.port}, TLS: ${emailConfig.tls}`);
           
           // 执行邮件检查，添加超时保护
           const result = await Promise.race([
@@ -120,7 +120,7 @@ export async function startHeyGenEmailCheckJob() {
             message: `已检查 ${emailCount} 封邮件，处理了 ${processedCount} 个视频`
           });
           
-          logger.info(`HeyGen 邮件检查完成: 检查了 ${emailCount} 封邮件，处理了 ${processedCount} 个视频`);
+          logger.debug(`HeyGen 邮件检查完成: 检查了 ${emailCount} 封邮件，处理了 ${processedCount} 个视频`);
         } catch (error: unknown) {
           // 清除超时计时器
           if (timeoutId) clearTimeout(timeoutId);
@@ -149,7 +149,7 @@ export async function startHeyGenEmailCheckJob() {
         timezone: "Asia/Shanghai" // 使用中国时区
       });
       
-      logger.info('HeyGen邮件检查定时任务创建成功');
+      logger.debug('HeyGen邮件检查定时任务创建成功');
     } catch (cronError) {
       logger.error('创建HeyGen邮件检查定时任务失败:', cronError instanceof Error ? cronError.message : String(cronError));
       return false;
@@ -166,20 +166,20 @@ export async function startHeyGenEmailCheckJob() {
     );
     
     // 启动任务
-    logger.info('正在启动HeyGen邮件检查定时任务');
+    logger.debug('正在启动HeyGen邮件检查定时任务');
     heygenCheckJob.start();
     
     // 获取下一次实际执行时间（如果node-cron支持）
     try {
       // 使用简单估算，避免nextDate()方法可能不兼容的问题
       const nextRunTime = getNextExecutionTime();
-      logger.info(`下一次 HeyGen 邮件检查预计在 ${nextRunTime.toLocaleString()} 执行`);
+      logger.debug(`下一次 HeyGen 邮件检查预计在 ${nextRunTime.toLocaleString()} 执行`);
     } catch (e) {
       logger.error('计算下一次执行时间失败:', e instanceof Error ? e.message : String(e));
     }
     
     // 立即执行一次检查，确保功能正常
-    logger.info('正在执行HeyGen邮件检查的初始检查...');
+    logger.debug('正在执行HeyGen邮件检查的初始检查...');
     try {
       const emailConfig = {
         user: settingsObj.HEYGEN_EMAIL_USER || '',
@@ -190,15 +190,15 @@ export async function startHeyGenEmailCheckJob() {
       };
       
       // 隐藏密码后记录配置
-      logger.info(`初始检查使用邮箱: ${emailConfig.user}@${emailConfig.host}:${emailConfig.port}`);
+      logger.debug(`初始检查使用邮箱: ${emailConfig.user}@${emailConfig.host}:${emailConfig.port}`);
       
       const result = await checkHeyGenEmails(emailConfig);
-      logger.info(`初始检查完成，处理了 ${result?.processed || 0} 封邮件`);
+      logger.debug(`初始检查完成，处理了 ${result?.processed || 0} 封邮件`);
     } catch (e) {
       logger.error('初始HeyGen邮件检查失败:', e instanceof Error ? e.message : String(e));
     }
     
-    logger.info(`HeyGen 邮件检查任务启动成功，使用cron表达式: ${checkInterval}`);
+    logger.debug(`HeyGen 邮件检查任务启动成功，使用cron表达式: ${checkInterval}`);
     return true;
   } catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -210,12 +210,12 @@ export async function startHeyGenEmailCheckJob() {
 
 export function stopHeyGenEmailCheckJob() {
   if (heygenCheckJob) {
-    logger.info('正在停止HeyGen邮件检查任务');
+    logger.debug('正在停止HeyGen邮件检查任务');
     heygenCheckJob.stop();
     heygenCheckJob = null;
-    logger.info('HeyGen 邮件检查任务已停止');
+    logger.debug('HeyGen 邮件检查任务已停止');
     return true;
   }
-  logger.info('没有运行中的HeyGen邮件检查任务需要停止');
+  logger.debug('没有运行中的HeyGen邮件检查任务需要停止');
   return false;
 }

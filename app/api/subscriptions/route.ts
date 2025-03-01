@@ -5,6 +5,7 @@ import { syncSubscription } from '@/lib/sync-service';
 import { logger } from '@/lib/logger';
 import { setupProxy } from '@/lib/proxy';
 import { getEnvSetting } from '@/lib/env-service';
+import { trackApiOperation } from '@/lib/quota-tracker';
 
 // 获取所有订阅
 export async function GET() {
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
     try {
       if (type === 'channel') {
         // 获取频道信息
+        // 记录API调用配额
+        trackApiOperation('CHANNELS_LIST', 'channels.list');
+        
         const response = await http.get(
           `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${sourceId}&key=${YOUTUBE_API_KEY}`,
           {
@@ -123,6 +127,9 @@ export async function POST(request: NextRequest) {
         
       } else if (type === 'playlist') {
         // 获取播放列表信息
+        // 记录API调用配额
+        trackApiOperation('PLAYLISTS_LIST', 'playlists.list');
+        
         const response = await http.get(
           `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${sourceId}&key=${YOUTUBE_API_KEY}`,
           {
@@ -151,6 +158,9 @@ export async function POST(request: NextRequest) {
         const channelId = playlist.snippet.channelId;
         if (channelId) {
           try {
+            // 记录API调用配额
+            trackApiOperation('CHANNELS_LIST', 'channels.list');
+            
             const channelResponse = await http.get(
               `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`,
               {
@@ -220,7 +230,7 @@ export async function POST(request: NextRequest) {
       const syncResult = await syncSubscription(subscription, syncLogs, { maxVideos: null });
       logs.push(...syncLogs);
       
-      logger.info(`创建新订阅: ${subscription.name} (${type})`, { sourceId });
+      logger.debug(`创建新订阅: ${subscription.name} (${type})`, { sourceId });
       
       return NextResponse.json({
         message: '订阅已添加',

@@ -4,13 +4,13 @@ import { getAllEnvSettings } from '../lib/env-service';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('正在查询数据库内容...\n');
+  logger.debug('正在查询数据库内容...\n');
 
   // 查询所有设置
   const settingsObj = await getAllEnvSettings();
-  console.log('===== 系统设置 =====');
+  logger.debug('===== 系统设置 =====');
   Object.entries(settingsObj).forEach(([key, value]) => {
-    console.log(`${key}: ${value}`);
+    logger.debug(`${key}: ${value}`);
   });
   
   // 查询所有订阅
@@ -22,15 +22,15 @@ async function main() {
     }
   });
   
-  console.log('\n===== 订阅列表 =====');
+  logger.debug('\n===== 订阅列表 =====');
   subscriptions.forEach(sub => {
-    console.log(`- ${sub.name} (${sub.type})`);
-    console.log(`  ID: ${sub.id}`);
-    console.log(`  源ID: ${sub.sourceId}`);
-    console.log(`  缩略图: ${sub.thumbnailUrl || '无'}`);
-    console.log(`  视频数量: ${sub._count.videos}`);
-    console.log(`  最后同步: ${sub.lastSync.toLocaleString()}`);
-    console.log('');
+    logger.debug(`- ${sub.name} (${sub.type})`);
+    logger.debug(`  ID: ${sub.id}`);
+    logger.debug(`  源ID: ${sub.sourceId}`);
+    logger.debug(`  缩略图: ${sub.thumbnailUrl || '无'}`);
+    logger.debug(`  视频数量: ${sub._count.videos}`);
+    logger.debug(`  最后同步: ${sub.lastSync.toLocaleString()}`);
+    logger.debug('');
   });
   
   // 查询最新的10个视频
@@ -41,16 +41,16 @@ async function main() {
     }
   });
   
-  console.log('\n===== 最近10个视频 =====');
+  logger.debug('\n===== 最近10个视频 =====');
   videos.forEach(video => {
-    console.log(`- ${video.title}`);
-    console.log(`  ID: ${video.id}`);
-    console.log(`  YouTube ID: ${video.youtubeId}`);
-    console.log(`  发布时间: ${video.publishedAt.toLocaleString()}`);
-    console.log(`  缩略图: ${video.thumbnailUrl || '无'}`);
-    console.log(`  频道ID: ${video.channelId || '无'}`);
-    console.log(`  频道名称: ${video.channelTitle || '无'}`);
-    console.log('');
+    logger.debug(`- ${video.title}`);
+    logger.debug(`  ID: ${video.id}`);
+    logger.debug(`  YouTube ID: ${video.youtubeId}`);
+    logger.debug(`  发布时间: ${video.publishedAt.toLocaleString()}`);
+    logger.debug(`  缩略图: ${video.thumbnailUrl || '无'}`);
+    logger.debug(`  频道ID: ${video.channelId || '无'}`);
+    logger.debug(`  频道名称: ${video.channelTitle || '无'}`);
+    logger.debug('');
   });
   
   // 查询日志
@@ -61,13 +61,13 @@ async function main() {
     }
   });
   
-  console.log('\n===== 最近10条日志 =====');
+  logger.debug('\n===== 最近10条日志 =====');
   logs.forEach(log => {
-    console.log(`[${log.level.toUpperCase()}] ${log.timestamp.toLocaleString()}`);
-    console.log(`  ${log.message}`);
-    if (log.details) console.log(`  详情: ${log.details}`);
-    if (log.source) console.log(`  来源: ${log.source}`);
-    console.log('');
+    logger.debug(`[${log.level.toUpperCase()}] ${log.timestamp.toLocaleString()}`);
+    logger.debug(`  ${log.message}`);
+    if (log.details) logger.debug(`  详情: ${log.details}`);
+    if (log.source) logger.debug(`  来源: ${log.source}`);
+    logger.debug('');
   });
 }
 

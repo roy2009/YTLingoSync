@@ -11,11 +11,11 @@ async function main() {
     process.exit(1);
   }
   
-  console.log(`开始测试同步订阅: ${subscriptionId}`);
+  logger.debug(`开始测试同步订阅: ${subscriptionId}`);
   
   try {
     const result = await syncSubscription(subscriptionId);
-    console.log('同步完成:', result);
+    logger.debug('同步完成:', result);
     
     const subscription = await prisma.subscription.findUnique({
       where: { id: subscriptionId },
@@ -24,7 +24,7 @@ async function main() {
       }
     });
     
-    console.log('订阅信息:', {
+    logger.debug('订阅信息:', {
       id: subscription?.id,
       name: subscription?.name,
       videoCount: subscription?._count.videos,

@@ -4,7 +4,7 @@ import { logger } from '@/lib/logger';
 
 export async function POST() {
   try {
-    logger.info('正在重启缺失数据更新任务...');
+    logger.debug('正在重启缺失数据更新任务...');
     
     // 先停止现有任务
     stopMissingDataUpdateJob();
@@ -13,7 +13,7 @@ export async function POST() {
     const result = await startMissingDataUpdateJob();
     
     if (result) {
-      logger.info('缺失数据更新任务重启成功');
+      logger.debug('缺失数据更新任务重启成功');
       return NextResponse.json({ success: true, message: '缺失数据更新任务已重启' });
     } else {
       logger.warn('缺失数据更新任务重启失败，可能已被禁用');

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
     
-    logger.info('测试邮件服务器连接', { host, port, user, tls });
+    logger.debug('测试邮件服务器连接', { host, port, user, tls });
     
     // 创建测试连接
     return new Promise((resolve) => {
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
       };
       
       imap.once('ready', () => {
-        logger.info('邮件服务器连接成功', { host, user });
+        logger.debug('邮件服务器连接成功', { host, user });
         connectionResult = {
           success: true,
           message: '连接成功！邮件服务器设置正确。',
@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
       });
       
       imap.once('end', () => {
-        logger.info('邮件服务器连接测试完成', connectionResult);
+        logger.debug('邮件服务器连接测试完成', connectionResult);
         resolve(NextResponse.json(connectionResult));
       });
       

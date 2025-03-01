@@ -10,7 +10,7 @@ export const config = {
 
 export async function GET(request: NextRequest) {
   try {
-    logger.info('开始定时更新缺失的视频数据');
+    logger.debug('开始定时更新缺失的视频数据');
     await updateMissingVideoData();
     return NextResponse.json({ success: true });
   } catch (error) {

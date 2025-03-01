@@ -6,7 +6,7 @@ import { submitToHeygen } from './heygen'; // 导入Heygen翻译功能
 // 创建一个新的服务定期更新缺失的视频信息
 export async function updateMissingVideoData() {
   try {
-    logger.info('开始查询缺失时长信息的视频和待翻译视频');
+    logger.debug('开始查询缺失时长信息的视频和待翻译视频');
     
     // 查询缺少持续时间的视频
     const videosWithoutDuration = await prisma.video.findMany({
@@ -27,7 +27,7 @@ export async function updateMissingVideoData() {
     const totalDurationMissing = videosWithoutDuration.length;
     const totalPendingTranslation = pendingTranslationVideos.length;
     
-    logger.info(`找到 ${totalDurationMissing} 个缺失时长信息的视频和 ${totalPendingTranslation} 个待翻译视频需要处理`);
+    logger.debug(`找到 ${totalDurationMissing} 个缺失时长信息的视频和 ${totalPendingTranslation} 个待翻译视频需要处理`);
     
     // 处理缺失时长信息的视频
     let durationUpdatedCount = 0;
@@ -36,10 +36,10 @@ export async function updateMissingVideoData() {
       const videoIds = videosWithoutDuration.map(v => v.youtubeId);
       
       // 从YouTube API获取最新信息
-      logger.info(`正在从YouTube API获取 ${videoIds.length} 个视频的详细信息`);
+      logger.debug(`正在从YouTube API获取 ${videoIds.length} 个视频的详细信息`);
       const updatedData = await fetchYouTubeVideosDetails(videoIds);
       
-      logger.info(`从API获取到 ${updatedData.length} 个视频的信息，开始更新数据库`);
+      logger.debug(`从API获取到 ${updatedData.length} 个视频的信息，开始更新数据库`);
       
       // 更新数据库中的记录
       for (const video of updatedData) {
@@ -57,7 +57,7 @@ export async function updateMissingVideoData() {
             durationUpdatedCount++;
             
             if (durationUpdatedCount % 10 === 0) {
-              logger.info(`已更新 ${durationUpdatedCount}/${updatedData.length} 个视频的时长信息`);
+              logger.debug(`已更新 ${durationUpdatedCount}/${updatedData.length} 个视频的时长信息`);
             }
           } else {
             logger.warn(`视频 ${video.id} 未能获取到时长信息`);
@@ -67,26 +67,26 @@ export async function updateMissingVideoData() {
         }
       }
       
-      logger.info(`时长信息更新完成: 成功更新了 ${durationUpdatedCount}/${totalDurationMissing} 个视频的时长信息`);
+      logger.debug(`时长信息更新完成: 成功更新了 ${durationUpdatedCount}/${totalDurationMissing} 个视频的时长信息`);
     }
     
     // 处理待翻译的视频
     let translationSubmittedCount = 0;
     
     if (totalPendingTranslation > 0) {
-      logger.info(`开始处理 ${totalPendingTranslation} 个待翻译视频`);
+      logger.debug(`开始处理 ${totalPendingTranslation} 个待翻译视频`);
       
       // 逐个提交到HeyGen进行翻译
       for (const video of pendingTranslationVideos) {
         try {
-          logger.info(`开始提交视频 ${video.youtubeId} (${video.title}) 到HeyGen翻译`);
+          logger.debug(`开始提交视频 ${video.youtubeId} (${video.title}) 到HeyGen翻译`);
           
           // 调用submitToHeygen函数进行翻译
           const success = await submitToHeygen(video.id);
           
           if (success) {
             translationSubmittedCount++;
-            logger.info(`视频 ${video.youtubeId} 成功提交到HeyGen翻译，进度: ${translationSubmittedCount}/${totalPendingTranslation}`);
+            logger.debug(`视频 ${video.youtubeId} 成功提交到HeyGen翻译，进度: ${translationSubmittedCount}/${totalPendingTranslation}`);
           } else {
             logger.error(`视频 ${video.youtubeId} 提交到HeyGen翻译失败`);
           }
@@ -108,7 +108,7 @@ export async function updateMissingVideoData() {
         }
       }
       
-      logger.info(`翻译提交完成: 成功提交了 ${translationSubmittedCount}/${totalPendingTranslation} 个视频进行翻译`);
+      logger.debug(`翻译提交完成: 成功提交了 ${translationSubmittedCount}/${totalPendingTranslation} 个视频进行翻译`);
     }
     
     // 返回更新结果

@@ -49,7 +49,7 @@ export async function POST(request: NextRequest) {
         
         // 修复标题翻译
         if (!video.titleZh) {
-          logger.info(`修复视频标题: ${video.id}, 标题: ${video.title.substring(0, 30)}...`);
+          logger.debug(`修复视频标题: ${video.id}, 标题: ${video.title.substring(0, 30)}...`);
           const titleZh = await translateText(video.title);
           if (titleZh && titleZh !== video.title) {
             updates.titleZh = titleZh;
@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
         
         // 修复描述翻译
         if (!video.descriptionZh && video.description) {
-          logger.info(`修复视频描述: ${video.id}`);
+          logger.debug(`修复视频描述: ${video.id}`);
           const descriptionZh = await translateLongText(video.description);
           if (descriptionZh && descriptionZh !== video.description) {
             updates.descriptionZh = descriptionZh;

@@ -10,6 +10,14 @@ export default function AdminPage() {
       <h1 className="text-2xl font-bold mb-6">管理面板</h1>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <Link href="/admin/api-keys" className="card hover:shadow-lg transition-shadow">
+          <div className="p-5">
+            <h2 className="text-xl font-semibold mb-2">API密钥管理</h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              管理YouTube API密钥配额与使用情况
+            </p>
+          </div>
+        </Link>
         <UpdateMissingData />
         <Link href="/admin/translate-videos" className="card hover:shadow-lg transition-shadow">
           <div className="p-5">

@@ -15,32 +15,32 @@ export async function initializeApp() {
   try {
     // 检查数据库连接
     await prisma.$connect();
-    logger.info('数据库连接成功');
+    logger.debug('数据库连接成功');
     
-    console.log('initializeApp() 开始初始化应用');
+    logger.debug('initializeApp() 开始初始化应用');
     
-    console.log('initializeApp() 初始化任务状态');
+    logger.debug('initializeApp() 初始化任务状态');
     // 初始化任务状态
     await initializeTaskStatus();
     
-    console.log('initializeApp() 启动同步服务');
+    logger.debug('initializeApp() 启动同步服务');
     // 启动同步服务
     startSyncService();
     
-    console.log('initializeApp() 启动HeyGen邮件检查服务');
+    logger.debug('initializeApp() 启动HeyGen邮件检查服务');
     // 启动HeyGen邮件检查服务
     const heygenJobStarted = await startHeyGenEmailCheckJob();
     if (heygenJobStarted) {
-      logger.info('HeyGen邮件检查服务启动成功');
+      logger.debug('HeyGen邮件检查服务启动成功');
     } else {
       logger.warn('HeyGen邮件检查服务启动失败，请检查日志了解详情');
     }
     
-    console.log('initializeApp() 启动缺失数据更新服务');
+    logger.debug('initializeApp() 启动缺失数据更新服务');
     // 启动缺失数据更新服务
     const missingDataJobStarted = await startMissingDataUpdateJob();
     if (missingDataJobStarted) {
-      logger.info('缺失数据更新服务启动成功');
+      logger.debug('缺失数据更新服务启动成功');
     } else {
       logger.warn('缺失数据更新服务启动失败，请检查日志了解详情');
     }
@@ -50,7 +50,7 @@ export async function initializeApp() {
       logger.debug('进程保活心跳...');
     }, 60000); // 每分钟一次心跳
     
-    logger.info('应用初始化完成，所有定时任务已启动');
+    logger.debug('应用初始化完成，所有定时任务已启动');
     
     return true;
   } catch (error) {

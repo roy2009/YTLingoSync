@@ -74,7 +74,7 @@ export default function SettingsPageTemplate({
         value: String(value)
       }));
       
-      console.log('正在保存设置:', settingsToSave);
+      logger.debug('正在保存设置:', settingsToSave);
       
       const res = await fetch('/api/settings', {
         method: 'POST',

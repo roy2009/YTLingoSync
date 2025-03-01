@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { text = 'Hello world', targetLang = 'zh' } = await request.json();
     
-    logger.info(`测试翻译文本: "${text}"`);
+    logger.debug(`测试翻译文本: "${text}"`);
     
     const result = await translateText(text, targetLang);
     

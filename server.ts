@@ -11,10 +11,10 @@ const handle = app.getRequestHandler();
 
 app.prepare().then(() => {
   // 服务启动时立即调用初始化函数
-  console.log('服务器启动中，正在初始化应用...');
+  console.debug('服务器启动中，正在初始化应用...');
   initializeApp().then((success) => {
     if (success) {
-      console.log('应用初始化成功！');
+      console.debug('应用初始化成功！');
     } else {
       console.error('应用初始化失败！请检查日志');
     }
@@ -34,6 +34,6 @@ app.prepare().then(() => {
     }
   }).listen(port, (err?: Error) => {
     if (err) throw err;
-    console.log(`> 服务器已启动，监听端口: ${port}`);
+    console.debug(`> 服务器已启动，监听端口: ${port}`);
   });
 }); 

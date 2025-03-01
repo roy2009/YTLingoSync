@@ -73,3 +73,37 @@ model TaskStatus {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
+
+// YouTube API密钥模型
+model YouTubeApiKey {
+  id               String    @id @default(cuid())
+  key              String    @unique // API密钥
+  name             String    // 名称或描述
+  isActive         Boolean   @default(true) // 是否启用
+  dailyQuotaLimit  Int       @default(10000) // 每日配额限制，默认10000
+  currentUsage     Int       @default(0) // 当前使用量
+  resetTime        DateTime  // 配额重置时间
+  lastUsed         DateTime? // 最后使用时间
+  isValid          Boolean   @default(true) // 密钥是否有效
+  errorMessage     String?   // 最近错误信息
+  priority         Int       @default(0) // 优先级，数值越小优先级越高
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  // 关联到密钥使用记录
+  usageRecords     ApiKeyUsageRecord[]
+}
+
+// API密钥使用记录
+model ApiKeyUsageRecord {
+  id          String      @id @default(cuid())
+  keyId       String      // 关联的API密钥ID
+  endpoint    String      // 使用的API端点
+  quotaCost   Int         // 消耗的配额
+  timestamp   DateTime    @default(now()) // 操作时间
+  success     Boolean     @default(true) // 调用是否成功
+  errorInfo   String?     // 错误信息（如果失败）
+  
+  // 关联到YouTube API密钥
+  apiKey      YouTubeApiKey @relation(fields: [keyId], references: [id], onDelete: Cascade)
+}

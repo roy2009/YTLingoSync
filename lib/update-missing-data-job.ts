@@ -31,7 +31,7 @@ export async function startMissingDataUpdateJob() {
     // 检查是否启用了缺失数据更新
     const enabled = settingsObj.MISSING_DATA_UPDATE_ENABLED !== 'false'; // 默认启用
     if (!enabled) {
-      logger.info('缺失数据更新已禁用，不启动任务');
+      logger.debug('缺失数据更新已禁用，不启动任务');
       return false;
     }
     
@@ -60,7 +60,7 @@ export async function startMissingDataUpdateJob() {
           }, DEFAULT_TIMEOUT);
         });
         
-        logger.info('执行定期缺失数据更新');
+        logger.debug('执行定期缺失数据更新');
         
         // 更新任务状态为运行中
         await updateTaskStatus(TASK_NAMES.MISSING_DATA_UPDATE, {
@@ -90,7 +90,7 @@ export async function startMissingDataUpdateJob() {
           message: `已更新 ${updatedCount} 条缺失数据`
         });
         
-        logger.info(`缺失数据更新完成: 更新了 ${updatedCount} 条数据`);
+        logger.debug(`缺失数据更新完成: 更新了 ${updatedCount} 条数据`);
       } catch (error: unknown) {
         // 清除超时计时器
         if (timeoutId) clearTimeout(timeoutId);
@@ -129,7 +129,7 @@ export async function startMissingDataUpdateJob() {
     missingDataJob.start();
     
     // 记录下一次执行时间
-    logger.info(`缺失数据更新任务已启动，下一次执行时间: ${
+    logger.debug(`缺失数据更新任务已启动，下一次执行时间: ${
       new Date(getNextExecutionTime()).toLocaleString()
     }`);
     
@@ -144,7 +144,7 @@ export function stopMissingDataUpdateJob() {
   if (missingDataJob) {
     missingDataJob.stop();
     missingDataJob = null;
-    logger.info('缺失数据更新任务已停止');
+    logger.debug('缺失数据更新任务已停止');
     return true;
   }
   return false;

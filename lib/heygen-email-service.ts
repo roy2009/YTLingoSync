@@ -70,7 +70,7 @@ export async function checkHeyGenEmails(config: {
   debug?: boolean;
   verbose?: boolean; // 新增选项，用于控制是否输出详细日志
 }): Promise<{processed: number, errors: number}> {
-  logger.info('开始检查 HeyGen 邮件通知', { 
+  logger.debug('开始检查 HeyGen 邮件通知', { 
     host: config.host, 
     port: config.port, 
     user: config.user,
@@ -271,7 +271,7 @@ export async function checkHeyGenEmails(config: {
             if (potentialHeygenUrls.length > 0) {
               // 使用第一个找到的链接
               const heygenUrl = potentialHeygenUrls[0];
-              logger.info(`直接从邮件文本中提取到 HeyGen 分享链接: ${heygenUrl}`);
+              logger.debug(`直接从邮件文本中提取到 HeyGen 分享链接: ${heygenUrl}`);
               
               // 从HeyGen页面提取YouTube ID
               const youtubeId = await extractYouTubeId(heygenUrl);
@@ -299,7 +299,7 @@ export async function checkHeyGenEmails(config: {
                   youtubeId: youtubeId
                 }
               });
-              logger.info(`从HeyGen链接提取到YouTube ID: ${youtubeId}`);
+              logger.debug(`从HeyGen链接提取到YouTube ID: ${youtubeId}`);
               
             
               if (!video) {
@@ -324,7 +324,7 @@ export async function checkHeyGenEmails(config: {
               });
               
               // 在处理邮件成功后增加更详细的日志
-              logger.info(`成功从邮件中提取并处理 HeyGen 链接`, {
+              logger.debug(`成功从邮件中提取并处理 HeyGen 链接`, {
                 subject: parsed.subject,
                 from: parsed.from?.text,
                 heygenUrl,
@@ -361,7 +361,7 @@ export async function checkHeyGenEmails(config: {
     
     // 修改邮件获取和处理流程
     async function processAllMessages(messages: EnhancedMessageBuffer[]) {
-      logger.info(`开始处理 ${messages.length} 封邮件`);
+      logger.debug(`开始处理 ${messages.length} 封邮件`);
       let processedCount = 0;
       
       // 串行处理每封邮件，确保完成一封再处理下一封
@@ -387,7 +387,7 @@ export async function checkHeyGenEmails(config: {
         }
       }
       
-      logger.info(`所有邮件处理完成，成功处理 ${processedCount} 封，遇到 ${errors} 个错误`);
+      logger.debug(`所有邮件处理完成，成功处理 ${processedCount} 封，遇到 ${errors} 个错误`);
       processed = processedCount;
     }
     
@@ -411,7 +411,7 @@ export async function checkHeyGenEmails(config: {
         
         // 在调试模式下通知用户
         if (config.debug) {
-          logger.info('调试模式：不会将邮件标记为已读，以便重复测试');
+          logger.debug('调试模式：不会将邮件标记为已读，以便重复测试');
         }
         
         imap.search(searchCriteria, (err: Error | null, results: number[]) => {
@@ -422,7 +422,7 @@ export async function checkHeyGenEmails(config: {
           }
           
           if (results.length === 0) {
-            logger.info('未发现邮件');
+            logger.debug('未发现邮件');
             imap.end();
             return resolve({ processed: 0, errors: 0 });
           }
@@ -436,7 +436,7 @@ export async function checkHeyGenEmails(config: {
             logger.debug(`调试模式：限制处理最近的30封邮件（总共 ${originalCount} 封）`);
           }
           
-          logger.info(`发现 ${results.length} 封邮件${config.debug ? '（调试模式）' : ''}`, { 
+          logger.debug(`发现 ${results.length} 封邮件${config.debug ? '（调试模式）' : ''}`, { 
             count: results.length,
             mode: config.debug ? 'debug' : 'normal',
             messageIds: results.join(', ')
@@ -504,12 +504,12 @@ export async function checkHeyGenEmails(config: {
           
           // 所有邮件获取完成后的处理
           f.once('end', () => {
-            logger.info(`邮件获取完成，共 ${allMessages.length} 封邮件待处理`);
+            logger.debug(`邮件获取完成，共 ${allMessages.length} 封邮件待处理`);
             
             // 异步处理所有邮件，完成后关闭连接
             processAllMessages(allMessages)
               .then(() => {
-                logger.info('所有邮件处理完成', { processed, errors });
+                logger.debug('所有邮件处理完成', { processed, errors });
                 imap.end();
                 resolve({ processed, errors });
               })
@@ -530,7 +530,7 @@ export async function checkHeyGenEmails(config: {
     });
     
     imap.once('end', () => {
-      logger.info('IMAP 连接已关闭');
+      logger.debug('IMAP 连接已关闭');
     });
     
     logger.debug('开始连接到 IMAP 服务器');

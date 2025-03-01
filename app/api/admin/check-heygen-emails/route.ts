@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json().catch(() => ({}));
     const debug = body.debug || false;
     
-    logger.info(`开始${debug ? '调试模式' : ''}检查 HeyGen 邮件`, { 
+    logger.debug(`开始${debug ? '调试模式' : ''}检查 HeyGen 邮件`, { 
       debug,
       requestTime: new Date().toISOString()
     });
@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 记录操作日志
-    logger.info(`手动${debug ? '调试模式' : ''}检查 HeyGen 邮件`, {
+    logger.debug(`手动${debug ? '调试模式' : ''}检查 HeyGen 邮件`, {
       host: config.host,
       user: config.user,
       debug: debug

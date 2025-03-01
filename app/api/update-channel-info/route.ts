@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
       take: 50 // 每次处理50个，避免超时
     });
 
-    logger.info(`找到 ${videos.length} 个需要更新频道信息的视频`);
+    logger.debug(`找到 ${videos.length} 个需要更新频道信息的视频`);
     
     if (videos.length === 0) {
       return NextResponse.json({ message: "没有需要更新的视频" });

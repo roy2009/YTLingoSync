@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    logger.info(`收到同步请求: 订阅ID ${id}`);
+    logger.debug(`收到同步请求: 订阅ID ${id}`);
     
     // 其余代码不变...
   } catch (error) {

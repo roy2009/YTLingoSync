@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { setupProxy } from '@/lib/proxy';
 import { getEnvSetting } from '@/lib/env-service';
+import { trackApiOperation, getQuotaStatus } from '@/lib/quota-tracker';
 
 export async function GET(request: Request) {
   try {
@@ -23,11 +24,17 @@ export async function GET(request: Request) {
     const http = setupProxy(proxyConfig);
     
     try {
+      // 记录API调用配额
+      trackApiOperation('READ_OPERATION', 'videos.list');
+      
       // 测试YouTube API连接
       const response = await http.get(
         `https://www.googleapis.com/youtube/v3/videos?part=snippet&chart=mostPopular&maxResults=1&key=${YOUTUBE_API_KEY}`,
         { timeout: 10000 }
       );
+      
+      // 获取当前配额状态
+      const quotaStatus = getQuotaStatus();
       
       return NextResponse.json({
         success: true,
@@ -36,6 +43,12 @@ export async function GET(request: Request) {
         serviceDetails: {
           youtubeApiVersion: 'v3',
           requestCount: response.headers['x-quota-usage'] || 'unknown'
+        },
+        // 添加配额信息
+        quotaUsage: {
+          session: quotaStatus.sessionQuotaUsed,
+          daily: quotaStatus.dailyQuotaUsed,
+          resetTime: quotaStatus.quotaResetTime.toISOString()
         }
       });
     } catch (apiError: unknown) {

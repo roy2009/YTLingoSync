@@ -41,26 +41,41 @@ export default function NetworkFlowBackground() {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
+    // 设置节流函数，限制调整大小事件的触发频率
+    let resizeTimeout: NodeJS.Timeout | null = null;
+    
     // 设置画布大小
     const setCanvasSize = () => {
-      canvas.width = window.innerWidth;
-      canvas.height = window.innerHeight;
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
       
-      // 重新生成节点和连接
-      initNetwork();
+      resizeTimeout = setTimeout(() => {
+        if (canvas) {
+          canvas.width = window.innerWidth;
+          canvas.height = window.innerHeight;
+          
+          // 重新生成节点和连接
+          initNetwork();
+        }
+      }, 300); // 300毫秒节流
     };
     
     // 生成随机颜色
     const getRandomColor = () => {
       const colors = [
-        'rgba(0, 180, 220, alpha)',   // 青色
-        'rgba(0, 220, 120, alpha)',   // 绿色
-        'rgba(220, 180, 0, alpha)',   // 黄色
-        'rgba(220, 100, 0, alpha)',   // 橙色
-        'rgba(180, 120, 220, alpha)'  // 紫色
+        [0, 180, 220],   // 青色
+        [0, 220, 120],   // 绿色
+        [220, 180, 0],   // 黄色
+        [220, 100, 0],   // 橙色
+        [180, 120, 220]  // 紫色
       ];
       
-      return colors[Math.floor(Math.random() * colors.length)].replace('alpha', (Math.random() * 0.3 + 0.7) + '');
+      const colorIndex = Math.floor(Math.random() * colors.length);
+      const [r, g, b] = colors[colorIndex];
+      const alpha = Math.random() * 0.3 + 0.7; // 透明度在0.7-1.0之间
+      
+      return `rgba(${r}, ${g}, ${b}, ${alpha})`;
     };
     
     // 初始化网络
@@ -286,8 +301,9 @@ export default function NetworkFlowBackground() {
             node.x, node.y, node.radius * 8
           );
           
-          const baseColor = node.color.replace('rgba', 'rgba').replace(')', ', 0.7)');
-          const fadeColor = node.color.replace('rgba', 'rgba').replace(')', ', 0)');
+          // 修复颜色处理，正确提取基础颜色并设置新的透明度
+          const baseColor = node.color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/, 'rgba($1, $2, $3, 0.7)');
+          const fadeColor = node.color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/, 'rgba($1, $2, $3, 0)');
           
           gradient.addColorStop(0, baseColor);
           gradient.addColorStop(1, fadeColor);
@@ -301,7 +317,8 @@ export default function NetworkFlowBackground() {
         // 绘制节点脉冲效果
         const pulseRadius = node.radius + node.pulseSize;
         if (pulseRadius > node.radius) {
-          ctx.fillStyle = node.color.replace('rgba', 'rgba').replace(')', ', 0.3)');
+          // 修复颜色处理，正确提取基础颜色并设置新的透明度
+          ctx.fillStyle = node.color.replace(/rgba\((\d+),\s*(\d+),\s*(\d+),\s*[\d.]+\)/, 'rgba($1, $2, $3, 0.3)');
           ctx.beginPath();
           ctx.arc(node.x, node.y, pulseRadius, 0, Math.PI * 2);
           ctx.fill();

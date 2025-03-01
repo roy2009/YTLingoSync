@@ -4,6 +4,7 @@ import { setupProxy } from '@/lib/proxy';
 import { logger } from '@/lib/logger';
 import { parseDuration } from '@/lib/youtube-api';
 import { getEnvSetting } from '@/lib/env-service';
+import { trackApiOperation } from '@/lib/quota-tracker';
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,9 @@ export async function POST(request: Request) {
       if (type === 'channel') {
         logs.push(`正在查询频道信息: ID=${sourceId}`);
         try {
+          // 记录API调用配额
+          trackApiOperation('CHANNELS_LIST', 'channels.list');
+          
           const channelResponse = await http.get(
             `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${sourceId}&key=${YOUTUBE_API_KEY}`,
             { 
@@ -71,6 +75,9 @@ export async function POST(request: Request) {
             // 获取频道最新视频
             logs.push('正在获取频道最新视频...');
             try {
+              // 记录API调用配额 - 搜索操作消耗100单位
+              trackApiOperation('SEARCH_OPERATION', 'search.list');
+              
               const videosResponse = await http.get(
                 `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${sourceId}&order=date&maxResults=3&type=video&key=${YOUTUBE_API_KEY}`,
                 { timeout: 10000 }
@@ -86,6 +93,9 @@ export async function POST(request: Request) {
                   return item.id.videoId;
                 }).join(',');
                 logs.push(`找到 ${videosResponse.data.items.length} 个视频，获取详细信息...`);
+                
+                // 记录API调用配额
+                trackApiOperation('VIDEOS_LIST', 'videos.list');
                 
                 const videoDetailsResponse = await http.get(
                   `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
@@ -136,6 +146,10 @@ export async function POST(request: Request) {
         }
       } else if (type === 'playlist') {
         logs.push(`正在查询播放列表信息: ID=${sourceId}`);
+        
+        // 记录API调用配额
+        trackApiOperation('PLAYLISTS_LIST', 'playlists.list');
+        
         const response = await http.get(
           `https://www.googleapis.com/youtube/v3/playlists?part=snippet&id=${sourceId}&key=${YOUTUBE_API_KEY}`
         );
@@ -150,6 +164,10 @@ export async function POST(request: Request) {
           
           // 获取播放列表中的视频
           logs.push('正在获取播放列表视频...');
+          
+          // 记录API调用配额
+          trackApiOperation('PLAYLIST_ITEMS_LIST', 'playlistItems.list');
+          
           const videosResponse = await http.get(
             `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${sourceId}&maxResults=3&key=${YOUTUBE_API_KEY}`
           );
@@ -159,9 +177,12 @@ export async function POST(request: Request) {
           if (videosResponse.data.items && videosResponse.data.items.length > 0) {
             const videoIds = videosResponse.data.items
               .filter((item: YouTubeVideoItem) => item.snippet?.resourceId?.videoId)
-              .map((item: YouTubeVideoItem) => item.snippet.resourceId.videoId)
+              .map((item: YouTubeVideoItem) => item.snippet?.resourceId?.videoId)
               .join(',');
             logs.push(`找到 ${videosResponse.data.items.length} 个视频，获取详细信息...`);
+            
+            // 记录API调用配额
+            trackApiOperation('VIDEOS_LIST', 'videos.list');
             
             const videoDetailsResponse = await http.get(
               `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`

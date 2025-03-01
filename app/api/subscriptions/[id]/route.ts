@@ -40,7 +40,7 @@ export async function PUT(
     });
     
     logs.push(`✅ 订阅设置已更新: ${updatedSubscription.name}`);
-    logger.info(`更新订阅设置: ${updatedSubscription.name} (${updatedSubscription.id})`);
+    logger.debug(`更新订阅设置: ${updatedSubscription.name} (${updatedSubscription.id})`);
     
     return NextResponse.json({
       message: '订阅设置已更新',

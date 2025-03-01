@@ -22,7 +22,7 @@ const HEYGEN_BASE_URL = 'https://app.heygen.com';
  */
 async function findAndClickElementByText(page: puppeteer.Page, text: string, typeAfterClick?: string) {
   
-  console.log(`开始查找文本为"${text}"的元素`)
+  logger.debug(`开始查找文本为"${text}"的元素`)
   
   try {
     // 等待页面稳定
@@ -65,13 +65,13 @@ async function findAndClickElementByText(page: puppeteer.Page, text: string, typ
         await page.keyboard.type(typeAfterClick)
       }
       
-      console.log(`成功点击文本为"${text}"的元素`)
+      logger.debug(`成功点击文本为"${text}"的元素`)
       return {
         success: true,
         element: targetElement
       }
     } else {
-      console.log(`未找到可见的文本为"${text}"的元素`)
+      logger.debug(`未找到可见的文本为"${text}"的元素`)
       return {
         success: false,
         element: null
@@ -80,7 +80,7 @@ async function findAndClickElementByText(page: puppeteer.Page, text: string, typ
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     const errorStack = error instanceof Error ? (error.stack || '无堆栈信息') : '非标准错误对象';
-    console.log(`点击文本为"${text}"的元素时出错: ${errorMessage}\n错误堆栈: ${errorStack}`);
+    logger.debug(`点击文本为"${text}"的元素时出错: ${errorMessage}\n错误堆栈: ${errorStack}`);
     return {
       success: false,
       error: errorMessage
@@ -93,19 +93,19 @@ async function findAndClickElementByText(page: puppeteer.Page, text: string, typ
  * @returns 登录后的浏览器和页面实例
  */
 export async function loginToHeygen(): Promise<{browser: any, page: any}> {
-  logger.info('开始登录 HeyGen 平台');
+  logger.debug('开始登录 HeyGen 平台');
   
   // 获取HeyGen邮箱和密码
-  logger.info('获取设置');
+  logger.debug('获取设置');
   const config = await getAllEnvSettings();
-  logger.info('获取设置 OK');
+  logger.debug('获取设置 OK');
 
   if (!config.HEYGEN_LOGIN_EMAIL || !config.HEYGEN_LOGIN_PASSWORD) {
-    logger.info('HeyGen 登录信息未配置，请检查 HEYGEN_LOGIN_EMAIL 和 HEYGEN_LOGIN_PASSWORD 设置');
+    logger.debug('HeyGen 登录信息未配置，请检查 HEYGEN_LOGIN_EMAIL 和 HEYGEN_LOGIN_PASSWORD 设置');
     throw new Error('HeyGen 登录信息未配置，请检查 HEYGEN_LOGIN_EMAIL 和 HEYGEN_LOGIN_PASSWORD 设置');
   }
   
-  logger.info('启动浏览器 - 从无头模式改为显示模式');
+  logger.debug('启动浏览器 - 从无头模式改为显示模式');
   // 启动浏览器 - 从无头模式改为显示模式
   const browser = await puppeteer.launch({
     headless: true, // 关闭无头模式以便于调试
@@ -125,7 +125,7 @@ export async function loginToHeygen(): Promise<{browser: any, page: any}> {
     await session.send('Runtime.enable');
     
     // 启用控制台输出到终端
-    page.on('console', msg => console.log('浏览器页面控制台:', msg.text()));
+    page.on('console', msg => logger.debug('浏览器页面控制台:', msg.text()));
 
     // 导航到登录页面并等待网络请求完成
     await page.goto(`${HEYGEN_BASE_URL}/login`, {
@@ -162,7 +162,7 @@ export async function loginToHeygen(): Promise<{browser: any, page: any}> {
       
     // 验证登录是否成功
     if (currentUrl.includes('app.heygen.com') && !currentUrl.includes('/login')) {
-      logger.info('HeyGen 登录成功');
+      logger.debug('HeyGen 登录成功');
       return { browser, page };
     } else {
       throw new Error('登录验证失败')
@@ -183,7 +183,7 @@ export async function closeBrowser(browser: any) {
   if (browser) {
     try {
       await browser.close();
-      logger.info('浏览器实例已关闭');
+      logger.debug('浏览器实例已关闭');
     } catch (error) {
       logger.error('关闭浏览器实例失败:', error);
     }
@@ -199,7 +199,7 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
   let video = null;
   
   try {
-    console.log('开始提交视频到 HeyGen', videoId)
+    logger.debug('开始提交视频到 HeyGen', videoId)
     // 获取视频信息
     video = await prisma.video.findUnique({
       where: { id: videoId }
@@ -229,19 +229,19 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
       const page = session.page;
 
       // 1. 导航到视频翻译页面
-      console.log('开始导航到视频翻译页面')
+      logger.debug('开始导航到视频翻译页面')
       await page.goto('https://app.heygen.com/projects?create_video_modal=true&modal_screen=translate_url', {
         waitUntil: 'networkidle0',
         timeout: 60000
       })
-      console.log('成功导航到视频翻译页面')
+      logger.debug('成功导航到视频翻译页面')
 
       await page.waitForFunction(
         () => document.readyState === 'complete',
         { timeout: 30000 }
       )
-      console.log('视频翻译页面加载完成')
-      console.log('定位到URL输入框')
+      logger.debug('视频翻译页面加载完成')
+      logger.debug('定位到URL输入框')
       
       await page.keyboard.press('Tab')
       await page.keyboard.press('Tab')
@@ -251,53 +251,53 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
       await page.keyboard.press('Tab')
       await page.keyboard.type(`https://www.youtube.com/watch?v=${youtubeId}`)
 
-      console.log('翻译视频URL输入完成')
+      logger.debug('翻译视频URL输入完成')
 
       // 点击第一页的Create new translation按钮
       page.keyboard.press('Enter')
 
-      console.log('等待5秒...')
+      logger.debug('等待5秒...')
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 5000)))
-      console.log('等待完成')
+      logger.debug('等待完成')
 
       // 点击第二页的Create new translation按钮
-      console.log('等待第二页Create new translation按钮出现')
+      logger.debug('等待第二页Create new translation按钮出现')
       await page.waitForFunction(
         () => document.readyState === 'complete',
         { timeout: 30000 }
       )
-      console.log('页面已稳定')
+      logger.debug('页面已稳定')
       await findAndClickElementByText(page, 'Create new translation')
-      console.log('等待1秒...')
+      logger.debug('等待1秒...')
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 1000)))
-      console.log('等待完成')
+      logger.debug('等待完成')
       
       // 查找并点击元素
       const result = await findAndClickElementByText(page, 'Choose a language...', 'Chinese')
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 1000)))
       if (result.success && result.element) {
-        console.log(`元素位置: (${result.element.x}, ${result.element.y})`)
+        logger.debug(`元素位置: (${result.element.x}, ${result.element.y})`)
         await page.mouse.click(result.element.x+20, result.element.y+result.element.height+result.element.height/2)
-        console.log('已点击元素')
+        logger.debug('已点击元素')
       }
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 1000)))
       await findAndClickElementByText(page, 'Include captionsCreator')
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 1000)))
       await findAndClickElementByText(page, 'Submit for Translation')
 
-      console.log('等待提交完成...')
+      logger.debug('等待提交完成...')
       await page.waitForFunction(
         () => document.readyState === 'complete',
         { timeout: 30000 }
       )
 
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 10000)))
-      console.log('等待完成')
+      logger.debug('等待完成')
 
       // 关闭浏览器并返回成功响应
       await closeBrowser(browser);
       browser = null; // 避免在 finally 中再次关闭
-      console.log('浏览器已关闭')
+      logger.debug('浏览器已关闭')
       success = true
     }
 

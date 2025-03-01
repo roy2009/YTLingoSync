@@ -5,11 +5,17 @@ import MainNav from '@/components/MainNav';
 import { BackgroundProvider } from '@/components/BackgroundSwitcher';
 import BackgroundSwitcher from '@/components/BackgroundSwitcher';
 import AppInitializer from '@/app/components/AppInitializer';
+import { initApplication } from '@/app/api/init';
 
 export const metadata: Metadata = {
   title: 'YTLingoSync',
   description: '自动翻译并处理YouTube视频内容',
 };
+
+// 在应用启动时初始化
+if (typeof window === 'undefined') {
+  initApplication().catch(console.error);
+}
 
 export default function RootLayout({
   children,

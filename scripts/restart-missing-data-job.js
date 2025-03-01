@@ -1,7 +1,7 @@
 // 重启缺失数据更新任务的脚本
 const http = require('http');
 
-console.log('正在重启缺失数据更新任务...');
+logger.debug('正在重启缺失数据更新任务...');
 
 // 创建请求选项
 const options = {
@@ -27,7 +27,7 @@ const req = http.request(options, (res) => {
       const response = JSON.parse(data);
       
       if (res.statusCode === 200) {
-        console.log('✅ 成功:', response.message);
+        logger.debug('✅ 成功:', response.message);
       } else {
         console.error('❌ 失败:', response.message || response.error);
       }
@@ -39,7 +39,7 @@ const req = http.request(options, (res) => {
 
 req.on('error', (error) => {
   console.error('❌ 请求错误:', error.message);
-  console.log('确保应用程序正在运行，端口是否正确？');
+  logger.debug('确保应用程序正在运行，端口是否正确？');
 });
 
 // 完成请求

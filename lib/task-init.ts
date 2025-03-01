@@ -29,10 +29,10 @@ export async function initializeTaskStatus() {
         update: {} // 如果已存在，不更新任何字段
       });
 
-      logger.info(`初始化任务状态: ${taskName}, 下次执行时间: ${nextRunTime.toLocaleString()}`);
+      logger.debug(`初始化任务状态: ${taskName}, 下次执行时间: ${nextRunTime.toLocaleString()}`);
     }
 
-    logger.info('所有任务状态初始化完成');
+    logger.debug('所有任务状态初始化完成');
     return true;
   } catch (error: unknown) {
     logger.error('初始化任务状态失败', error instanceof Error ? error.message : String(error));

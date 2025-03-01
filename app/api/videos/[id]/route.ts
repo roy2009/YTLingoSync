@@ -81,7 +81,7 @@ export async function DELETE(
       where: { id: videoId }
     });
     
-    logger.info(`视频已删除: ${videoId}`, { title: video.title });
+    logger.debug(`视频已删除: ${videoId}`, { title: video.title });
     
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function UpdateMissingData() {
   const [updating, setUpdating] = useState(false);
@@ -8,6 +8,7 @@ export default function UpdateMissingData() {
   // 获取缺少时长的视频数量
   const fetchMissingCount = async () => {
     try {
+      // 使用相对URL，确保在客户端正确解析
       const response = await fetch('/api/admin/missing-count');
       if (response.ok) {
         const data = await response.json();
@@ -18,8 +19,8 @@ export default function UpdateMissingData() {
     }
   };
   
-  // 组件加载时获取一次
-  useState(() => {
+  // 组件加载时获取一次 - 使用useEffect而不是useState
+  useEffect(() => {
     fetchMissingCount();
   }, []);
   

@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     });
     
     // 开始更新流程
-    logger.info(`开始批量更新，共有 ${count} 个视频缺少时长信息`);
+    logger.debug(`开始批量更新，共有 ${count} 个视频缺少时长信息`);
     await updateMissingVideoData();
     
     return NextResponse.json({ 

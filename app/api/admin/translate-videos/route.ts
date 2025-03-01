@@ -30,7 +30,7 @@ export async function POST(request: NextRequest) {
     // 逐个翻译视频
     for (const video of videos) {
       try {
-        logger.info(`开始翻译视频: ID=${video.id}, 标题=${video.title.substring(0, 30)}...`);
+        logger.debug(`开始翻译视频: ID=${video.id}, 标题=${video.title.substring(0, 30)}...`);
         
         // 翻译标题
         const titleZh = await translateText(video.title);
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         });
         
         translatedCount++;
-        logger.info(`已翻译视频: ${video.id}, 原标题: ${video.title.substring(0, 30)}..., 翻译后: ${titleZh.substring(0, 30)}...`);
+        logger.debug(`已翻译视频: ${video.id}, 原标题: ${video.title.substring(0, 30)}..., 翻译后: ${titleZh.substring(0, 30)}...`);
         
         results.push({
           id: video.id,

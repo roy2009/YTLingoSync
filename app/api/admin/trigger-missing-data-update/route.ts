@@ -27,7 +27,7 @@ export async function POST() {
       // 标记任务开始运行
       isRunning = true;
       
-      logger.info('手动触发缺失数据更新任务开始执行');
+      logger.debug('手动触发缺失数据更新任务开始执行');
       
       // 更新任务状态为运行中
       await updateTaskStatus(TASK_NAMES.MISSING_DATA_UPDATE, {
@@ -64,7 +64,7 @@ export async function POST() {
         message: `已更新 ${updatedCount} 条缺失数据 (手动触发)`
       });
       
-      logger.info(`手动触发的缺失数据更新完成: 更新了 ${updatedCount} 条数据`);
+      logger.debug(`手动触发的缺失数据更新完成: 更新了 ${updatedCount} 条数据`);
       
       return NextResponse.json({
         success: true,

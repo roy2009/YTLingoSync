@@ -36,7 +36,7 @@ export async function processVideoForTranslation(videoId: string) {
     const duration = video.duration || 0;
     const segmentCount = Math.ceil(duration / SEGMENT_LENGTH);
     
-    console.log(`处理视频分段 - ${video.title}, 时长: ${duration}秒, 分段数: ${segmentCount}`);
+    logger.debug(`处理视频分段 - ${video.title}, 时长: ${duration}秒, 分段数: ${segmentCount}`);
     
     // 为每个分段创建翻译任务
     for (let i = 0; i < segmentCount; i++) {
@@ -76,7 +76,7 @@ export async function downloadYouTubeVideo(youtubeId: string): Promise<string> {
   const outputPath = path.join(TEMP_DIR, `${youtubeId}.mp4`);
   
   try {
-    console.log(`下载视频 ${youtubeId}`);
+    logger.debug(`下载视频 ${youtubeId}`);
     
     // 使用yt-dlp下载视频
     await execAsync(`yt-dlp -f 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/mp4' -o "${outputPath}" https://www.youtube.com/watch?v=${youtubeId}`);
@@ -94,7 +94,7 @@ export async function splitVideo(inputPath: string, startTime: number, endTime: 
   const outputPath = path.join(TEMP_DIR, `${fileName}_${startTime}-${endTime}.mp4`);
   
   try {
-    console.log(`分割视频 ${fileName}, 时间段: ${startTime}-${endTime}秒`);
+    logger.debug(`分割视频 ${fileName}, 时间段: ${startTime}-${endTime}秒`);
     
     // 使用ffmpeg分割视频
     await execAsync(`ffmpeg -i "${inputPath}" -ss ${startTime} -to ${endTime} -c copy "${outputPath}"`);
@@ -111,7 +111,7 @@ export function cleanupTempFiles(filePath: string) {
   try {
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
-      console.log(`删除临时文件: ${filePath}`);
+      logger.debug(`删除临时文件: ${filePath}`);
     }
   } catch (error) {
     console.error(`删除临时文件 ${filePath} 失败:`, error);

@@ -13,7 +13,7 @@ async function main() {
     { id: 'VERIFY_SSL', value: 'true' }
   ];
   
-  console.log('开始初始化基本设置...');
+  logger.debug('开始初始化基本设置...');
   
   for (const setting of settings) {
     await prisma.setting.upsert({
@@ -21,10 +21,10 @@ async function main() {
       update: {},
       create: setting
     });
-    console.log(`- 设置 ${setting.id} 已创建`);
+    logger.debug(`- 设置 ${setting.id} 已创建`);
   }
 
-  console.log('数据库初始化完成！');
+  logger.debug('数据库初始化完成！');
 }
 
 main()

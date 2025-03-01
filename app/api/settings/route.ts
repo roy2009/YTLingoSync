@@ -174,7 +174,7 @@ export async function POST(request: NextRequest) {
       return addCorsHeaders(response, request);
     }
     
-    logger.info('设置已更新', { 
+    logger.debug('设置已更新', { 
       count: Object.keys(settingsToUpdate).length,
       keys: Object.keys(settingsToUpdate)
     });

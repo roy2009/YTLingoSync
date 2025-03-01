@@ -22,12 +22,12 @@ export default function AppInitializer() {
       if (needsReinitialization) {
         const initializeApp = async () => {
           try {
-            console.log('正在调用应用初始化API...');
+            logger.debug('正在调用应用初始化API...');
             const response = await fetch('/api/init');
             const data = await response.json();
             
             if (response.ok) {
-              console.log('应用初始化成功:', data.message);
+              logger.debug('应用初始化成功:', data.message);
               setInitialized(true);
             } else {
               console.error('应用初始化失败:', data.error);
