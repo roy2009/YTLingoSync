@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateMissingVideoData } from '@/lib/update-trans-pending-video';
+import { updatePendingVideoData } from '@/lib/update-trans-pending-video';
 import { logger } from '@/lib/logger';
 import { prisma } from '@/lib/prisma';
 
@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     
     // 开始更新流程
     logger.debug(`开始批量更新，共有 ${count} 个视频缺少时长信息`);
-    await updateMissingVideoData();
+    await updatePendingVideoData();
     
     return NextResponse.json({ 
       success: true, 

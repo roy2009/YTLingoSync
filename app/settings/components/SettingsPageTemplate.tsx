@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 // import { toast } from 'react-hot-toast';
 import { SETTING_CATEGORIES, getSettingKeysByCategory, CATEGORY_LAYOUTS } from '@/lib/settings';
 import { useNotification } from '../../components/NotificationContext';
+import { logger } from '@/lib/logger';
 
 export interface SettingField {
   id: string;

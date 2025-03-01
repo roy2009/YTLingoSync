@@ -2,7 +2,7 @@ import { prisma } from './prisma';
 import { logger } from './logger';
 import { updateTaskStatus, TASK_NAMES } from './task-status-service';
 import * as nodeCron from 'node-cron';
-import { updateMissingVideoData } from './update-trans-pending-video';
+import { updatePendingVideoData } from './update-trans-pending-video';
 import { getAllEnvSettings } from './env-service';
 
 let transPendingVideoJob: nodeCron.ScheduledTask | null = null;
@@ -70,7 +70,7 @@ export async function startTransPendingVideoUpdateJob() {
         
         // 执行翻译排队视频，添加超时保护
         const result = await Promise.race([
-          updateMissingVideoData(),
+          updatePendingVideoData(),
           timeoutPromise
         ]) as { updated?: number } | undefined;
         

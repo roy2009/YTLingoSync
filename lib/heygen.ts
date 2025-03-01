@@ -1,10 +1,93 @@
-import puppeteer from 'puppeteer';
+import * as puppeteer from 'puppeteer';
 import { prisma } from './prisma';
 import { logger } from './logger';
 import { getAllEnvSettings } from './env-service';
 
 // 环境变量和配置
 const HEYGEN_BASE_URL = 'https://app.heygen.com';
+
+// 全局变量，用于保存浏览器和页面实例
+let globalBrowser: puppeteer.Browser | null = null;
+let globalPage: puppeteer.Page | null = null;
+let isLoggedIn: boolean = false;
+let lastLoginTime: number = 0;
+const LOGIN_EXPIRY_TIME = 1000 * 60 * 60 * 2; // 2小时后重新登录
+
+// 任务队列相关变量
+interface HeygenTask {
+  videoId: string;
+  resolve: (result: boolean) => void;
+  reject: (error: Error) => void;
+  addTime: number; // 添加到队列的时间
+}
+
+let processingTask = false; // 是否有任务正在处理
+const taskQueue: HeygenTask[] = []; // 任务队列
+const MAX_QUEUE_WAIT_TIME = 1000 * 60 * 30; // 最大等待时间（30分钟）
+const QUEUE_CHECK_INTERVAL = 1000 * 60 * 5; // 队列检查间隔（5分钟）
+
+// 启动队列监控
+setInterval(checkQueueTimeout, QUEUE_CHECK_INTERVAL);
+
+/**
+ * 检查队列中是否有超时的任务
+ */
+function checkQueueTimeout() {
+  const now = Date.now();
+  const timeoutTasks: HeygenTask[] = [];
+  
+  // 找出所有超时的任务
+  for (let i = taskQueue.length - 1; i >= 0; i--) {
+    const task = taskQueue[i];
+    if (now - task.addTime > MAX_QUEUE_WAIT_TIME) {
+      timeoutTasks.push(task);
+      taskQueue.splice(i, 1);
+    }
+  }
+  
+  // 处理超时任务
+  for (const task of timeoutTasks) {
+    logger.warn(`任务超时: ${task.videoId}，已从队列中移除（等待时间超过${MAX_QUEUE_WAIT_TIME / 1000 / 60}分钟）`);
+    
+    // 更新视频状态为失败
+    prisma.video.update({
+      where: { id: task.videoId },
+      data: {
+        translationStatus: 'failed',
+        translationError: '任务等待超时'
+      }
+    }).catch(err => {
+      logger.error(`更新超时任务状态失败: ${err}`);
+    });
+    
+    // 拒绝Promise
+    task.reject(new Error('任务等待超时'));
+  }
+  
+  if (timeoutTasks.length > 0) {
+    logger.info(`从队列中移除了 ${timeoutTasks.length} 个超时任务，当前队列长度: ${taskQueue.length}`);
+  }
+}
+
+/**
+ * 获取当前翻译队列状态
+ * @returns 队列状态信息
+ */
+export function getHeygenQueueStatus() {
+  return {
+    queueLength: taskQueue.length,
+    isProcessing: processingTask,
+    queuedTasks: taskQueue.map(task => ({
+      videoId: task.videoId,
+      waitingTime: Math.floor((Date.now() - task.addTime) / 1000) // 等待时间（秒）
+    })),
+    browserInfo: {
+      isActive: globalBrowser !== null,
+      isLoggedIn: isLoggedIn,
+      lastLoginTime: lastLoginTime > 0 ? new Date(lastLoginTime).toISOString() : null
+    }
+  };
+}
 
 /**
  * 在页面中查找并点击包含指定文本的元素
@@ -29,11 +112,11 @@ async function findAndClickElementByText(page: puppeteer.Page, text: string, typ
     await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 1000)))
     
     // 在页面中查找匹配的元素
-    const targetElement = await page.evaluate((searchText) => {
+    const targetElement = await page.evaluate((searchText: string) => {
       const elements = Array.from(document.querySelectorAll('*'))
       const element = elements.find(el => {
         const elementText = el.textContent?.trim()
-        return elementText === searchText && el.offsetParent !== null
+        return elementText === searchText && (el as HTMLElement).offsetParent !== null
       })
       
       if (element) {
@@ -92,7 +175,32 @@ async function findAndClickElementByText(page: puppeteer.Page, text: string, typ
  * 登录到 HeyGen 平台
  * @returns 登录后的浏览器和页面实例
  */
-export async function loginToHeygen(): Promise<{browser: any, page: any}> {
+export async function loginToHeygen(): Promise<{browser: puppeteer.Browser, page: puppeteer.Page}> {
+  // 检查是否已有全局浏览器实例，并且是否在有效期内
+  const currentTime = Date.now();
+  if (globalBrowser && globalPage && isLoggedIn && (currentTime - lastLoginTime < LOGIN_EXPIRY_TIME)) {
+    try {
+      // 检查页面是否仍然可用
+      await globalPage.evaluate(() => document.title);
+      logger.debug('使用现有的 HeyGen 会话');
+      return { browser: globalBrowser, page: globalPage };
+    } catch (e) {
+      // 页面不可用，需要重新创建浏览器
+      logger.debug('现有页面不可用，需要重新登录');
+      if (globalBrowser) {
+        try {
+          await globalBrowser.close();
+        } catch (closeError) {
+          const closeErrorMessage = closeError instanceof Error ? closeError.message : String(closeError);
+          logger.debug('关闭不可用的浏览器实例失败:', closeErrorMessage);
+        }
+      }
+      globalBrowser = null;
+      globalPage = null;
+      isLoggedIn = false;
+    }
+  }
+
   logger.debug('开始登录 HeyGen 平台');
   
   // 获取HeyGen邮箱和密码
@@ -105,101 +213,174 @@ export async function loginToHeygen(): Promise<{browser: any, page: any}> {
     throw new Error('HeyGen 登录信息未配置，请检查 HEYGEN_LOGIN_EMAIL 和 HEYGEN_LOGIN_PASSWORD 设置');
   }
   
-  logger.debug('启动浏览器 - 从无头模式改为显示模式');
-  // 启动浏览器 - 从无头模式改为显示模式
-  const browser = await puppeteer.launch({
-    headless: true, // 关闭无头模式以便于调试
-    defaultViewport: null, // 使用默认视口大小
-    args: [
-      '--no-sandbox',
-      '--disable-setuid-sandbox',
-      '--start-maximized' // 最大化浏览器窗口
-    ]
-  });
+  logger.debug('启动浏览器');
   
   try {
-    const page = await browser.newPage();
+    // 如果没有全局浏览器实例，创建一个新的
+    if (!globalBrowser) {
+      globalBrowser = await puppeteer.launch({
+        headless: true, // 无头模式
+        defaultViewport: null, // 使用默认视口大小
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--start-maximized' // 最大化浏览器窗口
+        ]
+      });
+    }
+    
+    // 创建新页面
+    globalPage = await globalBrowser.newPage();
     
     // 添加开发者工具选项
-    const session = await page.target().createCDPSession();
+    const session = await globalPage.target().createCDPSession();
     await session.send('Runtime.enable');
     
     // 启用控制台输出到终端
-    page.on('console', msg => logger.debug('浏览器页面控制台:', msg.text()));
+    globalPage.on('console', (msg: puppeteer.ConsoleMessage) => logger.debug('浏览器页面控制台:', msg.text()));
 
     // 导航到登录页面并等待网络请求完成
-    await page.goto(`${HEYGEN_BASE_URL}/login`, {
+    await globalPage.goto(`${HEYGEN_BASE_URL}/login`, {
       waitUntil: 'networkidle2',
       timeout: 60000
     })
 
-    await page.waitForFunction(
+    await globalPage.waitForFunction(
       () => document.readyState === 'complete',
       { timeout: 30000 }
     )
     // 额外等待1秒
-    await page.evaluate(() => new Promise(r => setTimeout(r, 1000)))
+    await globalPage.evaluate(() => new Promise(r => setTimeout(r, 1000)))
 
-    await page.keyboard.press('Tab')
-    await page.keyboard.type(config.HEYGEN_LOGIN_EMAIL || '')
-    await page.keyboard.press('Tab')
-    await page.keyboard.type(config.HEYGEN_LOGIN_PASSWORD || '')
+    await globalPage.keyboard.press('Tab')
+    await globalPage.keyboard.type(config.HEYGEN_LOGIN_EMAIL || '')
+    await globalPage.keyboard.press('Tab')
+    await globalPage.keyboard.type(config.HEYGEN_LOGIN_PASSWORD || '')
 
     // 提交登录表单并等待导航完成
     await Promise.all([
-      page.keyboard.press('Enter'),
-      page.waitForNavigation({ 
+      globalPage.keyboard.press('Enter'),
+      globalPage.waitForNavigation({ 
         waitUntil: ['networkidle0', 'domcontentloaded', 'load'],
         timeout: 60000
       })
     ])
 
     // 等待一段时间确保页面完全加载
-    await page.evaluate(() => new Promise(r => setTimeout(r, 2000)))
+    await globalPage.evaluate(() => new Promise(r => setTimeout(r, 2000)))
 
     // 获取当前页面URL并验证登录状态
-    const currentUrl = page.url()
+    const currentUrl = globalPage.url()
       
     // 验证登录是否成功
     if (currentUrl.includes('app.heygen.com') && !currentUrl.includes('/login')) {
       logger.debug('HeyGen 登录成功');
-      return { browser, page };
+      isLoggedIn = true;
+      lastLoginTime = Date.now();
+      return { browser: globalBrowser, page: globalPage };
     } else {
       throw new Error('登录验证失败')
     }      
 
   } catch (error) {
     // 登录失败时关闭浏览器并抛出错误
-    await browser.close();
-    logger.error('HeyGen 登录失败:', error);
-    throw new Error('登录 HeyGen 失败: ' + error.message);
+    if (globalBrowser) {
+      try {
+        await globalBrowser.close();
+      } catch (closeError) {
+        const closeErrorMessage = closeError instanceof Error ? closeError.message : String(closeError);
+        logger.debug('关闭浏览器实例失败:', closeErrorMessage);
+      }
+      globalBrowser = null;
+      globalPage = null;
+      isLoggedIn = false;
+    }
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('HeyGen 登录失败:', errorMessage);
+    throw new Error('登录 HeyGen 失败: ' + errorMessage);
   }
 }
 
 /**
  * 关闭浏览器实例
  */
-export async function closeBrowser(browser: any) {
-  if (browser) {
+export async function closeBrowser(browser: puppeteer.Browser | null) {
+  // 仅在提供的浏览器实例与全局实例不同时关闭
+  if (browser && browser !== globalBrowser) {
     try {
       await browser.close();
-      logger.debug('浏览器实例已关闭');
+      logger.debug('非全局浏览器实例已关闭');
     } catch (error) {
-      logger.error('关闭浏览器实例失败:', error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('关闭浏览器实例失败:', errorMessage);
     }
   }
 }
+
 /**
- * 提交视频到 HeyGen 进行翻译，不再获取任务ID
+ * 强制关闭全局浏览器实例
+ */
+export async function forceCloseGlobalBrowser() {
+  if (globalBrowser) {
+    try {
+      await globalBrowser.close();
+      logger.debug('全局浏览器实例已强制关闭');
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error('强制关闭全局浏览器实例失败:', errorMessage);
+    }
+    globalBrowser = null;
+    globalPage = null;
+    isLoggedIn = false;
+  }
+}
+
+/**
+ * 处理队列中的下一个任务
+ */
+async function processNextTask() {
+  if (processingTask || taskQueue.length === 0) {
+    return;
+  }
+
+  processingTask = true;
+  const task = taskQueue.shift();
+
+  if (!task) {
+    processingTask = false;
+    return;
+  }
+
+  logger.debug(`开始处理队列中的任务，队列剩余任务数: ${taskQueue.length}`);
+
+  try {
+    const result = await processHeygenTask(task.videoId);
+    task.resolve(result);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error(`处理队列任务失败: ${errorMessage}`);
+    task.reject(new Error(errorMessage));
+  } finally {
+    processingTask = false;
+    // 延迟一小段时间再处理下一个任务，避免可能的资源竞争
+    setTimeout(() => {
+      processNextTask();
+    }, 1000);
+  }
+}
+
+/**
+ * 提交视频到 HeyGen 进行翻译的实际处理函数
  * @param videoId 数据库中的视频 ID (字符串)
  * @returns 是否成功提交
  */
-export async function submitToHeygen(videoId: string): Promise<boolean> {
-  let browser = null;
+async function processHeygenTask(videoId: string): Promise<boolean> {
+  let localBrowser: puppeteer.Browser | null = null;
   let video = null;
+  let useGlobalBrowser = true;
   
   try {
-    logger.debug('开始提交视频到 HeyGen', videoId)
+    logger.debug('开始处理视频翻译任务', videoId);
     // 获取视频信息
     video = await prisma.video.findUnique({
       where: { id: videoId }
@@ -210,7 +391,7 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
       return false;
     }
 
-    const youtubeId = video.youtubeId
+    const youtubeId = video.youtubeId;
     // 更新视频状态为处理中
     await prisma.video.update({
       where: { id: video.id },
@@ -221,11 +402,11 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
 
     // 实现 Heygen 翻译逻辑
     let success = false;
-    // 登录 HeyGen
-    const session = await loginToHeygen();
-
-    if (session) {
-      browser = session.browser;
+    
+    try {
+      // 尝试使用全局浏览器实例登录
+      const session = await loginToHeygen();
+      localBrowser = session.browser;
       const page = session.page;
 
       // 1. 导航到视频翻译页面
@@ -294,15 +475,24 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
       await page.evaluate(() => new Promise(resolve => setTimeout(resolve, 10000)))
       logger.debug('等待完成')
 
-      // 关闭浏览器并返回成功响应
-      await closeBrowser(browser);
-      browser = null; // 避免在 finally 中再次关闭
-      logger.debug('浏览器已关闭')
+      // 操作成功
       success = true
+    } catch (submitError) {
+      // 提交失败
+      const errorMessage = submitError instanceof Error ? submitError.message : String(submitError);
+      logger.error('提交到HeyGen失败:', errorMessage);
+      
+      // 如果是全局浏览器实例出错，则强制重置
+      if (useGlobalBrowser) {
+        logger.debug('由于提交失败，正在重置全局浏览器实例');
+        await forceCloseGlobalBrowser();
+      }
+      
+      success = false;
     }
 
     if (success) {
-      // 更新视频状态为完成
+      // 更新视频状态为处理中
       await prisma.video.update({
         where: { id: video.id },
         data: {
@@ -334,13 +524,60 @@ export async function submitToHeygen(videoId: string): Promise<boolean> {
         }
       });
     }
-    logger.error('Heygen translation failed:', error);
+    
+    // 如果发生严重错误，重置全局浏览器
+    await forceCloseGlobalBrowser();
+    
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    logger.error('Heygen translation failed:', errorMessage);
     return false;
-  } finally {
-    // 确保浏览器实例被关闭
-    if (browser) {
-      await closeBrowser(browser);
+  }
+}
+
+/**
+ * 提交视频到 HeyGen 进行翻译，不再获取任务ID
+ * 如果有任务正在进行，则将新任务添加到队列中等待处理
+ * @param videoId 数据库中的视频 ID (字符串)
+ * @returns 是否成功提交
+ */
+export async function submitToHeygen(videoId: string): Promise<boolean> {
+  logger.debug(`收到提交视频到HeyGen的请求: ${videoId}，当前任务队列长度: ${taskQueue.length}`);
+  
+  // 如果当前没有正在处理的任务并且队列为空，直接处理
+  if (!processingTask && taskQueue.length === 0) {
+    processingTask = true;
+    try {
+      logger.debug(`直接处理视频翻译任务: ${videoId}`);
+      const result = await processHeygenTask(videoId);
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      logger.error(`处理视频翻译任务直接失败: ${errorMessage}`);
+      throw new Error(errorMessage);
+    } finally {
+      processingTask = false;
+      // 检查队列中是否有其他任务
+      setTimeout(() => {
+        processNextTask();
+      }, 1000);
     }
+  } else {
+    // 有任务正在处理或队列不为空，将新任务添加到队列
+    logger.debug(`将视频翻译任务添加到队列: ${videoId}，当前队列长度: ${taskQueue.length}`);
+    
+    return new Promise((resolve, reject) => {
+      taskQueue.push({
+        videoId,
+        resolve,
+        reject,
+        addTime: Date.now() // 记录添加到队列的时间
+      });
+      
+      // 如果没有任务正在处理，启动队列处理
+      if (!processingTask) {
+        processNextTask();
+      }
+    });
   }
 }
 

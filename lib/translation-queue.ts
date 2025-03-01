@@ -101,10 +101,10 @@ async function updateVideoTranslationStatus(videoId: string, status: string, err
   });
 }
 
-async function getNextPendingVideo() {
+async function getNextVideoForTrans() {
   return await prisma.video.findFirst({
     where: { 
-      translationStatus: 'pending',
+      translationStatus: { in: ['pending', 'failed'] },
       processed: true // 确保视频已经处理完成
     }
   });

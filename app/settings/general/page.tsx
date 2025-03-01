@@ -18,13 +18,6 @@ export default function GeneralSettingsPage() {
   // 定义通用设置字段配置
   const fields: SettingField[] = [
     {
-      id: 'APP_NAME',
-      label: '应用名称',
-      type: 'text' as const,
-      placeholder: '您的应用名称',
-      description: '显示在浏览器标题和界面中的应用名称'
-    },
-    {
       id: 'DEFAULT_LANGUAGE',
       label: '默认语言',
       type: 'select' as const,

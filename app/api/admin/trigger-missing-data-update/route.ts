@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { updateMissingVideoData } from '@/lib/update-trans-pending-video';
+import { updatePendingVideoData } from '@/lib/update-trans-pending-video';
 import { updateTaskStatus, TASK_NAMES } from '@/lib/task-status-service';
 import { logger } from '@/lib/logger';
 
@@ -44,7 +44,7 @@ export async function POST() {
       
       // 执行翻译排队视频，添加超时保护
       const result = await Promise.race([
-        updateMissingVideoData(),
+        updatePendingVideoData(),
         timeoutPromise
       ]) as { updated?: number } | undefined;
       

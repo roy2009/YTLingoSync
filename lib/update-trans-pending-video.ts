@@ -4,9 +4,9 @@ import { fetchYouTubeVideosDetails } from './youtube-api';
 import { submitToHeygen } from './heygen'; // 导入Heygen翻译功能
 
 // 创建一个新的服务定期更新缺失的视频信息
-export async function updateMissingVideoData() {
+export async function updatePendingVideoData() {
   try {
-    logger.debug('开始查询缺失时长信息的视频和待翻译视频');
+    logger.debug('开始查询待翻译或者翻译失败视频');
     
     // 查询缺少持续时间的视频
     const videosWithoutDuration = await prisma.video.findMany({
@@ -17,7 +17,7 @@ export async function updateMissingVideoData() {
     // 查询翻译状态为pending的视频
     const pendingTranslationVideos = await prisma.video.findMany({
       where: { 
-        translationStatus: 'pending',
+        translationStatus: { in: ['pending', 'failed'] },
         // 确保视频有时长信息，因为翻译需要知道视频时长
         duration: { not: null }
       },
@@ -121,7 +121,7 @@ export async function updateMissingVideoData() {
     };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('更新缺失视频数据和提交翻译时发生错误:', errorMessage);
+    logger.error('提交翻译时发生错误:', errorMessage);
     throw new Error(`更新翻译排队视频和提交翻译失败: ${errorMessage}`);
   }
 } 

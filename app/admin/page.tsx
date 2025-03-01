@@ -18,18 +18,9 @@ export default function AdminPage() {
             </p>
           </div>
         </Link>
-        <UpdateTransPendingVideo />
-        <Link href="/admin/translate-videos" className="card hover:shadow-lg transition-shadow">
-          <div className="p-5">
-            <h2 className="text-xl font-semibold mb-2">批量翻译视频</h2>
-            <p className="text-gray-600 dark:text-gray-400">
-              为已有视频添加标题和描述翻译
-            </p>
-          </div>
-        </Link>
         <Link href="/admin/fix-translations" className="card hover:shadow-lg transition-shadow">
           <div className="p-5">
-            <h2 className="text-xl font-semibold mb-2">修复视频翻译</h2>
+            <h2 className="text-xl font-semibold mb-2">修复视频标题和描述翻译</h2>
             <p className="text-gray-600 dark:text-gray-400">
               批量修复未翻译的视频标题和描述
             </p>
