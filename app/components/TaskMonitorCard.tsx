@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
+import TaskCountdown from '@/app/components/TaskCountdown';
 
 interface TaskStatus {
   id: string;
@@ -19,7 +20,7 @@ interface TaskStatus {
   updatedAt: string;
 }
 
-export default function TasksPage() {
+export function TaskMonitorCard() {
   const [tasks, setTasks] = useState<TaskStatus[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -74,11 +75,11 @@ export default function TasksPage() {
   // 获取任务名称显示
   const getTaskDisplayName = (taskName: string) => {
     switch (taskName) {
-      case 'video_sync_service':
+      case 'VIDEO_SYNC_SERVICE':
         return '视频同步服务';
-      case 'heygen_email_check':
+      case 'HEYGEN_EMAIL_CHECK':
         return 'HeyGen 邮件检查';
-      case 'missing_data_update':
+      case 'MISSING_DATA_UPDATE':
         return '缺失数据更新';
       default:
         return taskName;
@@ -86,62 +87,67 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="container mx-auto py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">定时任务监控</h1>
-        <Button onClick={fetchTasks} disabled={loading}>
-          <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          刷新
-        </Button>
-      </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          {error}
+    <Card className="feature-card">
+      <CardHeader className="card-header-themed">
+        <div className="flex justify-between items-center">
+          <CardTitle className="section-title">
+            <span className="title-indicator"></span>
+            定时任务监控
+          </CardTitle>
+          <Button onClick={fetchTasks} disabled={loading} variant="outline" className="text-sm py-1 px-3">
+            <RefreshCw className={`mr-2 h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            刷新
+          </Button>
         </div>
-      )}
+      </CardHeader>
+      <CardContent>
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
+            {error}
+          </div>
+        )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>任务状态</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>任务名称</TableHead>
+              <TableHead>状态</TableHead>
+              <TableHead>上次运行时间</TableHead>
+              <TableHead>下次运行时间</TableHead>
+              <TableHead>运行次数</TableHead>
+              <TableHead>错误信息</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {tasks.length === 0 && !loading ? (
               <TableRow>
-                <TableHead>任务名称</TableHead>
-                <TableHead>状态</TableHead>
-                <TableHead>上次运行时间</TableHead>
-                <TableHead>下次运行时间</TableHead>
-                <TableHead>运行次数</TableHead>
-                <TableHead>错误信息</TableHead>
+                <TableCell colSpan={6} className="text-center">
+                  暂无任务数据
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {tasks.length === 0 && !loading ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center">
-                    暂无任务数据
+            ) : (
+              tasks.map((task) => (
+                <TableRow key={task.id}>
+                  <TableCell>{getTaskDisplayName(task.taskName)}</TableCell>
+                  <TableCell>{getStatusBadge(task.status)}</TableCell>
+                  <TableCell>{formatTime(task.lastRunTime)}</TableCell>
+                  <TableCell>
+                    {task.nextRunTime ? (
+                      <TaskCountdown nextRunTime={task.nextRunTime} />
+                    ) : (
+                      '未设置'
+                    )}
+                  </TableCell>
+                  <TableCell>{task.runCount}</TableCell>
+                  <TableCell className="max-w-xs truncate">
+                    {task.errorMessage || '-'}
                   </TableCell>
                 </TableRow>
-              ) : (
-                tasks.map((task) => (
-                  <TableRow key={task.id}>
-                    <TableCell>{getTaskDisplayName(task.taskName)}</TableCell>
-                    <TableCell>{getStatusBadge(task.status)}</TableCell>
-                    <TableCell>{formatTime(task.lastRunTime)}</TableCell>
-                    <TableCell>{formatTime(task.nextRunTime)}</TableCell>
-                    <TableCell>{task.runCount}</TableCell>
-                    <TableCell className="max-w-xs truncate">
-                      {task.errorMessage || '-'}
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-    </div>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
-}
+} 

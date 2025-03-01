@@ -1,12 +1,12 @@
 // 根据设置使用不同的翻译API
+import { getAllEnvSettings } from './env-service';
+import { translateText } from './translate';
+import { logger } from './logger';
+
 export async function translateWithSelectedService(text: string, targetLang = 'zh') {
   try {
     // 获取设置
-    const settings = await prisma.setting.findMany();
-    const settingsObj = settings.reduce((acc, item) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
+    const settingsObj = await getAllEnvSettings();
     
     const service = settingsObj.TRANSLATION_SERVICE || 'none';
     

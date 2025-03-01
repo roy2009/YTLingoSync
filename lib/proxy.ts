@@ -7,7 +7,7 @@ import https from 'https';
 
 interface ProxyOptions {
   proxyEnabled: boolean;
-  proxyUrl: string;
+  proxyUrl: string | undefined;
   proxyUsername?: string;
   proxyPassword?: string;
   verifySSL?: boolean;
@@ -89,24 +89,15 @@ export function setupProxy(options: ProxyOptions) {
 // 获取当前活跃的代理设置
 export async function getActiveProxyConfig() {
   try {
-    // 从数据库中获取代理设置
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-    const response = await axios.get(`${baseUrl}/api/settings`);
-
-    // axios 已经解析了 JSON，直接使用 response.data
-    const settingsArray = response.data.settings;
-
-    const settings = settingsArray.reduce((acc, item) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
+    // 从环境变量中获取代理设置
+    const { getEnvSetting } = await import('./env-service');
     
     return {
-      proxyEnabled: settings.PROXY_ENABLED === 'true',
-      proxyUrl: settings.PROXY_URL || '',
-      proxyUsername: settings.PROXY_USERNAME || '',
-      proxyPassword: settings.PROXY_PASSWORD || '',
-      verifySSL: settings.VERIFY_SSL !== 'false'
+      proxyEnabled: getEnvSetting('PROXY_ENABLED') === 'true',
+      proxyUrl: getEnvSetting('PROXY_URL') || '',
+      proxyUsername: getEnvSetting('PROXY_USERNAME') || '',
+      proxyPassword: getEnvSetting('PROXY_PASSWORD') || '',
+      verifySSL: getEnvSetting('VERIFY_SSL') !== 'false'
     };
   } catch (error) {
     console.error('获取代理设置失败:', error);

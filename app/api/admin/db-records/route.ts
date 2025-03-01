@@ -27,12 +27,6 @@ export async function GET(request: NextRequest) {
           include: { _count: { select: { translations: true } } }
         });
         break;
-      case 'Translation':
-        records = await prisma.translation.findMany({ take: limit });
-        break;
-      case 'Setting':
-        records = await prisma.setting.findMany({ take: limit });
-        break;
       case 'Log':
         records = await prisma.log.findMany({ 
           take: limit,

@@ -5,7 +5,7 @@
 
 'use client';
 
-import SettingsPageTemplate from '../components/SettingsPageTemplate';
+import SettingsPageTemplate, { SettingField } from '../components/SettingsPageTemplate';
 import { SETTING_CATEGORIES } from '@/lib/settings';
 
 /**
@@ -14,23 +14,24 @@ import { SETTING_CATEGORIES } from '@/lib/settings';
  * @returns {JSX.Element} 翻译设置页面
  */
 export default function TranslationSettingsPage() {
-  // 定义翻译设置字段配置
-  const fields = [
+  const fields: SettingField[] = [
     {
       id: 'TRANSLATION_SERVICE',
       label: '翻译服务',
       type: 'select',
       options: [
-        { value: 'none', label: '不使用翻译' },
-        { value: 'google', label: 'Google 翻译' }
+        { value: 'google-free', label: '谷歌翻译 (免费)' },
+        { value: 'google-api', label: '谷歌翻译 API (付费)' },
+        { value: 'heygen', label: 'HeyGen AI 翻译' },
+        { value: 'none', label: '不使用翻译' }
       ],
-      description: '选择用于文本翻译的服务'
+      description: '选择用于翻译视频标题和描述的服务'
     },
     {
       id: 'TRANSLATION_API_KEY',
       label: '翻译 API 密钥',
       type: 'password',
-      description: '如使用收费翻译服务，请填写API密钥'
+      description: '如果使用付费API，请输入API密钥'
     }
   ];
   

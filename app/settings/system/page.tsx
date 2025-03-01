@@ -5,7 +5,7 @@
 
 'use client';
 
-import SettingsPageTemplate from '../components/SettingsPageTemplate';
+import SettingsPageTemplate, { SettingField } from '../components/SettingsPageTemplate';
 import { SETTING_CATEGORIES } from '@/lib/settings';
 import { useNotification } from '../../components/NotificationContext';
 
@@ -18,7 +18,7 @@ export default function SystemSettingsPage() {
   const { showNotification } = useNotification();
   
   // 定义系统设置字段配置
-  const fields = [
+  const fields: SettingField[] = [
     {
       id: 'LOG_LEVEL',
       label: '日志级别',
@@ -35,7 +35,7 @@ export default function SystemSettingsPage() {
       id: 'MAINTENANCE_MODE',
       label: '维护模式',
       type: 'checkbox',
-      description: '启用维护模式，暂停自动任务和限制用户操作'
+      description: '启用维护模式，暂停所有自动同步和翻译任务'
     }
   ];
   

@@ -3,6 +3,7 @@ import axios from 'axios';
 import { setupProxy } from '@/lib/proxy';
 import { logger } from '@/lib/logger';
 import { parseDuration } from '@/lib/youtube-api';
+import { getEnvSetting } from '@/lib/env-service';
 
 export async function POST(request: Request) {
   try {
@@ -10,43 +11,16 @@ export async function POST(request: Request) {
 
     logger.debug('获取设置');
     
-    // 获取设置
-    const settingsResponse = await fetch(new URL('/api/settings', request.url));
-    if (!settingsResponse.ok) {
-      throw new Error(`获取设置失败: ${settingsResponse.statusText}`);
-    }
-/*
-    let settings;
-    try {
-      const data = await settingsResponse.json();
-      if (!data.settings || !Array.isArray(data.settings)) {
-        throw new Error('设置数据格式不正确');
-      }
-      settings = data.settings;
-    } catch (error) {
-      const err = error as Error;
-      throw new Error('获取设置失败：' + err.message);
-    }
-*/
-  let settings;
-  const data = await settingsResponse.json();
-  settings = data.settings;
-
-    
-    // 转换为对象格式
-    const settingsObj = settings.reduce((acc: { [key: string]: string }, item: { id: string, value: string }) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
+    // 直接从环境变量获取设置
     
     // 获取代理配置和API密钥
-    const YOUTUBE_API_KEY = settingsObj.YOUTUBE_API_KEY;
+    const YOUTUBE_API_KEY = getEnvSetting('YOUTUBE_API_KEY');
     const proxyConfig = {
-      proxyEnabled: settingsObj.PROXY_ENABLED === 'true',
-      proxyUrl: settingsObj.PROXY_URL,
-      proxyUsername: settingsObj.PROXY_USERNAME,
-      proxyPassword: settingsObj.PROXY_PASSWORD,
-      verifySSL: settingsObj.VERIFY_SSL !== 'false'
+      proxyEnabled: getEnvSetting('PROXY_ENABLED') === 'true',
+      proxyUrl: getEnvSetting('PROXY_URL'),
+      proxyUsername: getEnvSetting('PROXY_USERNAME'),
+      proxyPassword: getEnvSetting('PROXY_PASSWORD'),
+      verifySSL: getEnvSetting('VERIFY_SSL') !== 'false'
     };
     
     // 创建可能使用代理的axios实例
@@ -311,4 +285,4 @@ interface YouTubeAPIError {
     };
   };
   stack?: string;
-} 
+}

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
-import { syncSubscription } from '@/lib/video-processor';
+ '@/lib/video-processor';
+import { getAllEnvSettings } from '@/lib/env-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -23,17 +24,13 @@ export async function GET(request: NextRequest) {
     }
     
     // 检查翻译服务
-    const settings = await prisma.setting.findMany();
-    const settingsObj = settings.reduce((acc, item) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
+    const settingsObj = await getAllEnvSettings();
     
     const translationService = settingsObj.TRANSLATION_SERVICE || 'none';
     
     // 手动测试同步一个视频，重点检查翻译
-    const logs = [];
-    const result = await syncSubscription(subscription, logs, { maxVideos: 1 });
+    const logs: string[] = [];
+    const result = await syncSubscription(subscription, logs, { maxVideos: 1 as unknown as null });
     
     return NextResponse.json({
       message: '测试同步完成',
@@ -42,8 +39,11 @@ export async function GET(request: NextRequest) {
       result,
       logs
     });
-  } catch (error) {
-    logger.error('测试同步失败:', error);
-    return NextResponse.json({ error: '测试同步失败', message: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    logger.error('测试同步失败:', error instanceof Error ? error.message : String(error));
+    return NextResponse.json({ 
+      error: '测试同步失败', 
+      message: error instanceof Error ? error.message : '未知错误' 
+    }, { status: 500 });
   }
 } 

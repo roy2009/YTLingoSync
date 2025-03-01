@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { SETTING_CATEGORIES, getSettingKeysByCategory, CATEGORY_LAYOUTS } from '@/lib/settings';
 import { useNotification } from '../../components/NotificationContext';
 
-interface SettingField {
+export interface SettingField {
   id: string;
   label: string;
   type: 'text' | 'password' | 'email' | 'checkbox' | 'select';
@@ -20,20 +20,23 @@ interface SettingsPageProps {
   fields: SettingField[];
   onSave?: () => Promise<void>;
   additionalButtons?: React.ReactNode;
+  additionalInfo?: React.ReactNode;
 }
 
 export default function SettingsPageTemplate({ 
   category, 
   fields,
   onSave,
-  additionalButtons
+  additionalButtons,
+  additionalInfo
 }: SettingsPageProps) {
   const [settings, setSettings] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const { showNotification } = useNotification();
   
-  const categoryInfo = CATEGORY_LAYOUTS[category];
+  // 使用类型断言确保category是有效的键
+  const categoryInfo = CATEGORY_LAYOUTS[category as keyof typeof CATEGORY_LAYOUTS];
   
   useEffect(() => {
     fetchSettings();
@@ -47,7 +50,7 @@ export default function SettingsPageTemplate({
       const data = await res.json();
       
       if (data.settings) {
-        const settingsObj = data.settings.reduce((acc, item) => {
+        const settingsObj = data.settings.reduce((acc: Record<string, string>, item: { id: string, value: string }) => {
           acc[item.id] = item.value;
           return acc;
         }, {});
@@ -199,6 +202,8 @@ export default function SettingsPageTemplate({
             
             {additionalButtons}
           </div>
+          
+          {additionalInfo}
         </form>
       )}
     </div>

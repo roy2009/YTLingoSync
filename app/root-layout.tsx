@@ -1,6 +1,7 @@
 import { startHeyGenEmailCheckJob } from '@/lib/heygen-cron-job';
+import { ReactNode } from 'react';
 
-export default async function RootLayout({ children }) {
+export default async function RootLayout({ children }: { children: ReactNode }) {
   // 启动 HeyGen 邮件检查任务
   if (process.env.NODE_ENV === 'production') {
     try {

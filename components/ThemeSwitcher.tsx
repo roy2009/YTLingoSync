@@ -67,9 +67,9 @@ export default function ThemeSwitcher() {
       
       {isOpen && (
         <div 
-          className="absolute right-0 mt-2 w-48 py-2 bg-white/90 dark:bg-gray-800/90 backdrop-blur-md
+          className="absolute right-0 mt-2 w-48 py-2 bg-gray-800/90 dark:bg-gray-900/90 backdrop-blur-md
                     rounded-md shadow-xl z-50 border border-gray-200/50 dark:border-gray-700/50
-                    animate-fadeIn origin-top-right"
+                    animate-fadeIn origin-top-right text-white"
           role="menu"
           aria-orientation="vertical"
           aria-labelledby="theme-menu"
@@ -79,8 +79,8 @@ export default function ThemeSwitcher() {
               key={themeOption.id}
               onClick={() => handleThemeChange(themeOption.id as any)}
               className={`flex items-center px-4 py-2 text-sm w-full text-left transition-colors
-                        hover:bg-gray-100/80 dark:hover:bg-gray-700/80
-                        ${theme === themeOption.id ? 'bg-gray-100/80 dark:bg-gray-700/80 font-medium' : ''}`}
+                        hover:bg-gray-700/80 dark:hover:bg-gray-800/80
+                        ${theme === themeOption.id ? 'bg-gray-700/80 dark:bg-gray-800/80 font-medium' : ''}`}
               role="menuitem"
             >
               <span className="text-lg mr-2">{themeOption.icon}</span>

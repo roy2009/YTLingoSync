@@ -32,7 +32,23 @@ function formatDuration(seconds: number | null) {
  * 视频播放器组件
  * 包含视频切换按钮，位于视频右上角
  */
-function VideoPlayer({ videoId, isTranslated = false, translatedUrl = null, hasTranslation = false, showTranslated = true, setShowTranslated }) {
+interface VideoPlayerProps {
+  videoId: string;
+  isTranslated?: boolean;
+  translatedUrl: string | null | undefined;
+  hasTranslation?: boolean;
+  showTranslated?: boolean;
+  setShowTranslated: React.Dispatch<React.SetStateAction<boolean>>;
+}
+
+function VideoPlayer({ 
+  videoId, 
+  isTranslated = false, 
+  translatedUrl = null, 
+  hasTranslation = false, 
+  showTranslated = true, 
+  setShowTranslated 
+}: VideoPlayerProps) {
   // 创建一个包含视频和切换按钮的容器
   return (
     <div className="aspect-video w-full relative">
@@ -208,39 +224,28 @@ export default function VideoPage() {
           </p>
         </div>
       </div>
-      {/* 描述部分 */}
-      <div className="mt-4 p-6 rounded-lg bg-gray-800/70 backdrop-blur-md border border-gray-700/50 shadow-lg">
-        <h3 className="text-lg font-medium mb-2">视频描述</h3>
-        
-        {/* 如果有中文描述，显示中文描述 */}
-        {video.descriptionZh ? (
-          <div className="prose dark:prose-invert max-w-none">
-            {video.descriptionZh.split('\n').map((paragraph, i) => (
-              paragraph.trim() ? <p key={i}>{paragraph}</p> : <br key={i} />
-            ))}
-            
-            {/* 添加查看原文按钮 */}
-            {video.description !== video.descriptionZh && (
-              <details className="mt-4">
-                <summary className="cursor-pointer text-blue-500 hover:text-blue-400">
-                  查看原文描述
-                </summary>
-                <div className="mt-2 text-gray-600 dark:text-gray-400">
-                  {video.description.split('\n').map((paragraph, i) => (
-                    paragraph.trim() ? <p key={i}>{paragraph}</p> : <br key={i} />
+      {/* 描述区域 */}
+      <div className="mt-4">
+        <div className="flex justify-between items-start mb-4">
+          <h2 className="text-xl font-semibold mr-4">描述</h2>
+          {currentShowTranslated ? (
+            <div className="flex flex-col space-y-2">
+              {video.descriptionZh && (
+                <div className="prose prose-sm max-w-none">
+                  {video.descriptionZh.split('\n').map((paragraph, i) => (
+                    <p key={i} className="mb-2">{paragraph}</p>
                   ))}
                 </div>
-              </details>
-            )}
-          </div>
-        ) : (
-          // 如果没有中文描述，显示原始描述
-          <div className="prose dark:prose-invert max-w-none">
-            {video.description.split('\n').map((paragraph, i) => (
-              paragraph.trim() ? <p key={i}>{paragraph}</p> : <br key={i} />
-            ))}
-          </div>
-        )}
+              )}
+            </div>
+          ) : (
+            <div className="prose prose-sm max-w-none">
+              {video.description && video.description.split('\n').map((paragraph, i) => (
+                <p key={i} className="mb-2">{paragraph}</p>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

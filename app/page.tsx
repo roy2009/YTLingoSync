@@ -4,47 +4,7 @@
  */
 
 import Link from 'next/link';
-import SyncCountdown from '../components/SyncCountdown';
-
-/**
- * @function fetchDashboardStats
- * @description 获取仪表板统计数据
- * @returns {Promise<Object>} 包含频道数、视频数、同步状态等统计信息
- */
-async function fetchDashboardStats() {
-  try {
-    // 使用绝对 URL 确保在各种环境下都能正确访问API
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const response = await fetch(`${baseUrl}/api/dashboard/stats`, {
-      // 使用revalidate缓存策略，每60秒重新验证数据
-      next: { revalidate: 60 }
-    });
-    
-    if (!response.ok) {
-      console.warn('API返回非成功状态码:', response.status);
-      return getMockData();
-    }
-    
-    return await response.json();
-  } catch (error) {
-    console.error('获取统计数据出错:', error);
-    return getMockData();
-  }
-}
-
-/**
- * @function getMockData
- * @description 提供模拟数据，用于API请求失败时的降级处理
- * @returns {Object} 模拟的统计数据
- */
-function getMockData() {
-  return {
-    channelCount: 5,
-    videoCount: 42,
-    syncStatus: '开发模式',
-    nextSyncTime: new Date(Date.now() + 3600000).toISOString(),
-  };
-}
+import { TaskMonitorCard } from '@/app/components/TaskMonitorCard';
 
 /**
  * @component Home
@@ -52,9 +12,6 @@ function getMockData() {
  * @returns {JSX.Element} 渲染的主页面
  */
 export default async function Home() {
-  // 获取仪表板统计数据
-  const stats = await fetchDashboardStats();
-  
   return (
     <div className="page-container">
       <div className="content-container">
@@ -63,39 +20,9 @@ export default async function Home() {
         <div className="content-container-sm">
           <h1 className="home-title"> </h1>
           
-          {/* 系统概览卡片 */}
-          <div className="feature-card mb-8">
-            <div className="card-header-themed">
-              <h2 className="section-title">
-                <span className="title-indicator"></span>
-                系统概览
-              </h2>
-            </div>
-            <div className="card-body">
-              {/* 统计数据网格 */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-3">
-                {/* 订阅频道统计 */}
-                <div className="stat-card p-4 rounded-lg border border-[rgba(var(--accent-color),0.2)] bg-[rgba(var(--accent-color),0.05)]">
-                  <div className="text-sm text-[rgba(var(--foreground-rgb),0.7)]">订阅频道</div>
-                  <div className="text-2xl font-bold text-[rgb(var(--accent-color))]">{stats.channelCount}</div>
-                </div>
-                {/* 同步视频统计 */}
-                <div className="stat-card p-4 rounded-lg border border-[rgba(var(--accent-color),0.2)] bg-[rgba(var(--accent-color),0.05)]">
-                  <div className="text-sm text-[rgba(var(--foreground-rgb),0.7)]">同步视频</div>
-                  <div className="text-2xl font-bold text-[rgb(var(--accent-color))]">{stats.videoCount}</div>
-                </div>
-                {/* 同步状态显示 */}
-                <div className="stat-card p-4 rounded-lg border border-[rgba(var(--accent-color),0.2)] bg-[rgba(var(--accent-color),0.05)]">
-                  <div className="text-sm text-[rgba(var(--foreground-rgb),0.7)]">同步状态</div>
-                  <div className="text-2xl font-bold text-[rgb(var(--accent-color))]">{stats.syncStatus}</div>
-                </div>
-                {/* 下次同步倒计时 */}
-                <div className="stat-card p-4 rounded-lg border border-[rgba(var(--accent-color),0.2)] bg-[rgba(var(--accent-color),0.05)]">
-                  <div className="text-sm text-[rgba(var(--foreground-rgb),0.7)]">下次同步</div>
-                  <SyncCountdown nextSyncTime={stats.nextSyncTime} />
-                </div>
-              </div>
-            </div>
+          {/* 定时任务监控卡片 */}
+          <div className="mb-8">
+            <TaskMonitorCard />
           </div>
           
           {/* 功能导航区域 */}

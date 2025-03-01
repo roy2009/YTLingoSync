@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
 import { checkHeyGenEmails } from '@/lib/heygen-email-service';
 import { logger } from '@/lib/logger';
+import { getEnvSetting } from '@/lib/env-service';
 
 const prisma = new PrismaClient();
 
@@ -16,53 +17,17 @@ export async function POST(request: NextRequest) {
       requestTime: new Date().toISOString()
     });
     
-    // 从数据库获取设置
-    const settings = await prisma.setting.findMany({
-      where: {
-        id: {
-          in: [
-            'heygen_email_host',
-            'heygen_email_port',
-            'heygen_email_user',
-            'heygen_email_password',
-            'heygen_email_tls'
-          ]
-        }
-      }
-    });
-    
-    logger.debug('获取到 HeyGen 邮件设置', { settingsCount: settings.length });
-    
-    // 转换为配置对象
+    // 从环境变量获取设置
     const config = {
-      host: '',
-      port: 993,
-      user: '',
-      password: '',
-      tls: true,
+      host: getEnvSetting('HEYGEN_EMAIL_HOST') || '',
+      port: parseInt(getEnvSetting('HEYGEN_EMAIL_PORT') || '993', 10),
+      user: getEnvSetting('HEYGEN_EMAIL_USER') || '',
+      password: getEnvSetting('HEYGEN_EMAIL_PASSWORD') || '',
+      tls: getEnvSetting('HEYGEN_EMAIL_TLS') === 'true',
       debug: debug // 传递调试模式参数
     };
     
-    // 设置值
-    settings.forEach(setting => {
-      switch (setting.id) {
-        case 'heygen_email_host':
-          config.host = setting.value;
-          break;
-        case 'heygen_email_port':
-          config.port = parseInt(setting.value, 10) || 993;
-          break;
-        case 'heygen_email_user':
-          config.user = setting.value;
-          break;
-        case 'heygen_email_password':
-          config.password = setting.value;
-          break;
-        case 'heygen_email_tls':
-          config.tls = setting.value === 'true';
-          break;
-      }
-    });
+    logger.debug('获取到 HeyGen 邮件设置');
     
     // 验证配置
     if (!config.host || !config.user || !config.password) {

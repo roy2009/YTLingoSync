@@ -32,21 +32,21 @@
   
   /* 卡片样式 */
   .card {
-    @apply bg-gray-800/90 rounded-lg shadow-lg overflow-hidden
-           transition-all duration-300 hover:shadow-xl border border-gray-700/30
+    @apply bg-gray-900/70 rounded-lg shadow-lg overflow-hidden
+           transition-all duration-300 hover:shadow-xl border border-gray-700/50
            backdrop-blur-md hover:backdrop-blur-lg;
   }
   
   .card-header {
-    @apply px-6 py-4 border-b border-gray-700 bg-gray-700/50;
+    @apply px-6 py-4 border-b border-gray-700/50 bg-gray-800/50;
   }
   
   .card-body {
-    @apply p-6 bg-gray-800/90;
+    @apply p-6 bg-gray-900/70;
   }
   
   .card-footer {
-    @apply px-6 py-4 bg-gray-700/80 border-t border-gray-600;
+    @apply px-6 py-4 bg-gray-800/70 border-t border-gray-700/50;
   }
   
   /* 表单样式 */
@@ -182,7 +182,7 @@
   
   /* 添加缺失的类定义 */
   .card-themed-border {
-    @apply bg-gray-800/80 rounded-lg border border-[rgba(var(--accent-color),0.2)];
+    @apply bg-gray-800/50 rounded-lg border border-[rgba(var(--accent-color),0.2)];
   }
   
   /* 添加缺失的文本主题类 */
@@ -381,11 +381,11 @@ body > div:first-child {
 
 /* 卡片组件样式 */
 .feature-card {
-  @apply bg-gray-800/80 rounded-lg border border-[rgba(var(--accent-color),0.2)] shadow-[0_0_15px_rgba(var(--accent-color),0.1)] hover:shadow-[0_0_20px_rgba(var(--accent-color),0.2)] transition-all duration-300;
+  @apply bg-gray-800/50 rounded-lg border border-[rgba(var(--accent-color),0.2)] shadow-[0_0_15px_rgba(var(--accent-color),0.1)] hover:shadow-[0_0_20px_rgba(var(--accent-color),0.2)] transition-all duration-300;
 }
 
 .card-header-themed {
-  @apply bg-gradient-to-r from-[rgba(var(--accent-color),0.1)] to-transparent border-b-2 border-[rgb(var(--accent-color))];
+  @apply bg-gradient-to-r from-[rgba(var(--accent-color),0.08)] to-transparent border-b-2 border-[rgb(var(--accent-color))];
 }
 
 .section-title {
@@ -410,7 +410,7 @@ body > div:first-child {
 
 /* 指南卡片样式 */
 .guide-card {
-  @apply relative border-2 border-[rgba(var(--accent-color),0.3)] bg-gradient-to-br from-white/80 to-[rgba(var(--accent-color),0.05)] dark:from-gray-800/80 dark:to-[rgba(var(--accent-color),0.1)] p-6 rounded-lg shadow-lg;
+  @apply relative border-2 border-[rgba(var(--accent-color),0.3)] bg-gradient-to-br from-white/80 to-[rgba(var(--accent-color),0.05)] dark:from-gray-800/50 dark:to-[rgba(var(--accent-color),0.1)] p-6 rounded-lg shadow-lg;
 }
 
 .guide-header {

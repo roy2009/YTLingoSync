@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { setupProxy } from './proxy';
 import { logger } from './logger';
-import { prisma } from './prisma';
+import { getAllEnvSettings } from './env-service';
 
 interface YoutubeDataParams {
   type: 'channel' | 'playlist';
@@ -10,20 +10,42 @@ interface YoutubeDataParams {
   publishedAfter?: Date;
 }
 
-// 仅限服务器端 - 从数据库获取设置
+// YouTube API响应接口
+interface YoutubeVideoItem {
+  id: string;
+  snippet: {
+    title: string;
+    description: string;
+    publishedAt: string;
+    channelId: string;
+    channelTitle: string;
+    thumbnails: {
+      default?: { url: string };
+      high?: { url: string };
+    };
+    resourceId?: {
+      videoId: string;
+    };
+  };
+  contentDetails: {
+    duration: string;
+  };
+}
+
+// 从环境变量获取设置
 async function getSettings() {
-  // 从数据库获取设置
-  const settingsFromDb = await prisma.setting.findMany();
-  
-  // 转换为对象格式
-  return settingsFromDb.reduce((acc, item) => {
-    acc[item.id] = item.value;
-    return acc;
-  }, {});
+  // 从环境变量获取设置
+  return await getAllEnvSettings();
 }
 
 // 解析ISO 8601时长格式 (PT1H2M3S)
-export function parseDuration(duration: string): number {
+export function parseDuration(duration: string | null | undefined): number {
+  // 添加对null、undefined和非字符串类型的处理
+  if (duration === null || duration === undefined || typeof duration !== 'string') {
+    logger.warn(`收到非字符串类型的duration值: ${duration}，类型: ${typeof duration}`);
+    return 0;
+  }
+  
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
   if (!match) return 0;
   
@@ -59,13 +81,13 @@ export async function fetchYouTubeVideosDetails(videoIds: string[]) {
       `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${idsString}&key=${YOUTUBE_API_KEY}`
     );
     
-    return response.data.items.map(item => ({
+    return response.data.items.map((item: YoutubeVideoItem) => ({
       id: item.id,
       title: item.snippet.title,
       description: item.snippet.description,
       thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
       publishedAt: new Date(item.snippet.publishedAt),
-      durationSeconds: parseDuration(item.contentDetails.duration)
+      durationSeconds: parseDuration(item.contentDetails?.duration)
     }));
   } catch (error) {
     logger.error('获取YouTube视频详情失败', error);
@@ -124,8 +146,8 @@ export async function fetchYouTubeData({ type, sourceId, maxResults = 10, publis
           `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds.join(',')}&key=${YOUTUBE_API_KEY}`
         );
         
-        videos = videoResponse.data.items.map(item => {
-          const duration = parseDuration(item.contentDetails.duration);
+        videos = videoResponse.data.items.map((item: YoutubeVideoItem) => {
+          const duration = parseDuration(item.contentDetails?.duration);
           logger.info(`视频 ${item.id}: 标题=${item.snippet.title}, 时长=${duration}秒`);
           
           return {
@@ -171,13 +193,13 @@ export async function fetchYouTubeData({ type, sourceId, maxResults = 10, publis
             `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
           );
           
-          videos = videoResponse.data.items.map(item => ({
+          videos = videoResponse.data.items.map((item: YoutubeVideoItem) => ({
             youtubeId: item.id,
             title: item.snippet.title,
             description: item.snippet.description,
             thumbnailUrl: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.default?.url,
             publishedAt: new Date(item.snippet.publishedAt),
-            duration: parseDuration(item.contentDetails.duration),
+            duration: parseDuration(item.contentDetails?.duration),
             channelId: item.snippet.channelId,
             channelTitle: item.snippet.channelTitle
           }));
@@ -197,4 +219,4 @@ export async function fetchYouTubeData({ type, sourceId, maxResults = 10, publis
 export async function fetchVideoDetails(videoId: string) {
   const videos = await fetchYouTubeVideosDetails([videoId]);
   return videos[0];
-} 
+}

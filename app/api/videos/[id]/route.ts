@@ -9,7 +9,7 @@ export async function GET(
 ) {
   try {
     // 确保正确处理动态路由参数
-    const videoId = await params.id;
+    const videoId = params.id;
     
     if (!videoId) {
       return NextResponse.json(
@@ -40,8 +40,8 @@ export async function GET(
     }
     
     return NextResponse.json(video);
-  } catch (error) {
-    logger.error('获取视频详情失败', error);
+  } catch (error: unknown) {
+    logger.error('获取视频详情失败', error instanceof Error ? error.message : String(error));
     return NextResponse.json(
       { error: '获取视频详情失败' },
       { status: 500 }
@@ -55,7 +55,7 @@ export async function DELETE(
 ) {
   try {
     // 确保正确处理动态路由参数
-    const videoId = await params.id;
+    const videoId = params.id;
     
     if (!videoId) {
       return NextResponse.json(
@@ -84,8 +84,8 @@ export async function DELETE(
     logger.info(`视频已删除: ${videoId}`, { title: video.title });
     
     return NextResponse.json({ success: true });
-  } catch (error) {
-    logger.error('删除视频失败', error);
+  } catch (error: unknown) {
+    logger.error('删除视频失败', error instanceof Error ? error.message : String(error));
     return NextResponse.json(
       { error: '删除视频失败' },
       { status: 500 }

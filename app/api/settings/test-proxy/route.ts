@@ -2,19 +2,32 @@ import { NextResponse } from 'next/server';
 import axios from 'axios';
 import { setupProxy } from '@/lib/proxy';
 import { logger } from '@/lib/logger';
+import { updateEnvSettings, getEnvSetting } from '@/lib/env-service';
 
 export async function POST(request: Request) {
   try {
     const { proxyEnabled, proxyUrl, proxyUsername, proxyPassword } = await request.json();
     
-    if (!proxyEnabled) {
+    // 更新环境变量
+    await updateEnvSettings({
+      PROXY_ENABLED: proxyEnabled.toString(),
+      PROXY_URL: proxyUrl || '',
+      PROXY_USERNAME: proxyUsername || '',
+      PROXY_PASSWORD: proxyPassword || ''
+    });
+    
+    // 获取更新后的设置
+    const currentProxyEnabled = getEnvSetting('PROXY_ENABLED') === 'true';
+    const currentProxyUrl = getEnvSetting('PROXY_URL');
+    
+    if (!currentProxyEnabled) {
       return NextResponse.json(
         { error: '代理未启用，无需测试' },
         { status: 400 }
       );
     }
     
-    if (!proxyUrl) {
+    if (!currentProxyUrl) {
       return NextResponse.json(
         { error: '代理URL不能为空' },
         { status: 400 }
@@ -44,8 +57,8 @@ export async function POST(request: Request) {
         if (geoResponse.data && geoResponse.data.country_name) {
           location = `${geoResponse.data.city || ''} ${geoResponse.data.country_name}`;
         }
-      } catch (geoError) {
-        console.warn('无法获取IP地理位置:', geoError.message);
+      } catch (geoError: unknown) {
+        console.warn('无法获取IP地理位置:', geoError instanceof Error ? geoError.message : String(geoError));
       }
       
       return NextResponse.json({
@@ -54,17 +67,18 @@ export async function POST(request: Request) {
         location: location.trim()
       });
     } catch (error) {
-      logger.error('代理连接测试失败', error, 'proxy-test');
+      logger.error('代理连接测试失败', error instanceof Error ? error.message : String(error), 'proxy-test');
       
       let errorMessage = '代理连接失败';
-      if (error.code === 'ECONNREFUSED') {
+      const err = error as any; // 类型断言
+      if (err.code === 'ECONNREFUSED') {
         errorMessage = '无法连接到代理服务器，连接被拒绝';
-      } else if (error.code === 'ECONNABORTED') {
+      } else if (err.code === 'ECONNABORTED') {
         errorMessage = '连接超时，请检查代理地址是否正确';
-      } else if (error.response && error.response.status === 407) {
+      } else if (err.response && err.response.status === 407) {
         errorMessage = '代理认证失败，请检查用户名和密码';
-      } else if (error.message) {
-        errorMessage = `代理错误: ${error.message}`;
+      } else if (err.message) {
+        errorMessage = `代理错误: ${err.message}`;
       }
       
       return NextResponse.json(
@@ -73,10 +87,10 @@ export async function POST(request: Request) {
       );
     }
   } catch (error) {
-    logger.error('处理代理测试请求失败', error, 'proxy-test');
+    logger.error('处理代理测试请求失败', error instanceof Error ? error.message : String(error), 'proxy-test');
     return NextResponse.json(
       { error: '处理请求失败' },
       { status: 500 }
     );
   }
-} 
+}

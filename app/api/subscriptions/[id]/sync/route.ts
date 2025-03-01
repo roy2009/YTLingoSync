@@ -3,24 +3,21 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
-import { syncSubscription } from '@/lib/video-processor';
+import { syncSubscription } from '@/lib/sync-service';
+import { getEnvSetting } from '@/lib/env-service';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  const subscriptionId = params.id;
+  // 确保先await params对象
+  const paramsObj = await params;
+  const subscriptionId = paramsObj.id;
   
   try {
     // 获取翻译服务设置
-    const settings = await prisma.setting.findMany();
-    const settingsObj = settings.reduce((acc, item) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
-    
-    const translationService = settingsObj.TRANSLATION_SERVICE || 'none';
-    const logs = [`翻译服务: ${translationService}`];
+    const translationService = getEnvSetting('TRANSLATION_SERVICE') || 'none';
+    const logs: string[] = [`翻译服务: ${translationService}`];
     
     // 获取订阅信息
     const subscription = await prisma.subscription.findUnique({
@@ -54,7 +51,7 @@ export async function POST(
         syncedCount: result.syncedCount,
         logs
       });
-    } catch (error) {
+    } catch (error: any) {
       logger.error(`同步订阅失败: ${subscription.id}`, error, 'subscription-sync');
       logs.push(`❌ 同步失败: ${error.message || '未知错误'}`);
       
@@ -63,7 +60,7 @@ export async function POST(
         { status: 500 }
       );
     }
-  } catch (error) {
+  } catch (error: any) {
     logger.error('处理同步请求失败', error, 'subscription-sync');
     return NextResponse.json(
       { error: '处理同步请求失败', logs: ['❌ 处理请求失败'] },

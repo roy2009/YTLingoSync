@@ -17,6 +17,10 @@ model Subscription {
   updatedAt  DateTime @updatedAt
   videos     Video[]
   thumbnailUrl String?  // 存储频道或播放列表的缩略图URL
+  countryCode String?   // 频道归属国家代码
+  maxDurationForTranslation Int? // 自动翻译的最大视频时长（秒），null表示不限制
+  targetLanguage String? @default("Chinese") // 翻译目标语言，默认为中文
+  autoTranslate Boolean @default(true) // 是否自动翻译该订阅的视频
 
   @@unique([type, sourceId])
 }
@@ -46,13 +50,6 @@ model Video {
   @@index([youtubeId])
   @@index([translationStatus])
   @@index([processed])
-}
-
-model Setting {
-  id    String @id
-  value String
-
-  @@map("settings")
 }
 
 model Log {

@@ -1,6 +1,7 @@
 import puppeteer from 'puppeteer';
 import { prisma } from './prisma';
 import { logger } from './logger';
+import { getAllEnvSettings } from './env-service';
 
 // 环境变量和配置
 const HEYGEN_BASE_URL = 'https://app.heygen.com';
@@ -96,16 +97,12 @@ export async function loginToHeygen(): Promise<{browser: any, page: any}> {
   
   // 获取HeyGen邮箱和密码
   logger.info('获取设置');
-  const settings = await prisma.setting.findMany();
-  const config = settings.reduce((acc, item) => {
-    acc[item.id] = item.value;
-    return acc;
-  }, {});
+  const config = await getAllEnvSettings();
   logger.info('获取设置 OK');
 
-  if (!config.heygen_login_email || !config.heygen_login_password) {
-    logger.info('HeyGen 登录信息未配置，请检查 heygen_login_email 和 heygen_login_password 设置');
-    throw new Error('HeyGen 登录信息未配置，请检查 heygen_login_email 和 heygen_login_password 设置');
+  if (!config.HEYGEN_LOGIN_EMAIL || !config.HEYGEN_LOGIN_PASSWORD) {
+    logger.info('HeyGen 登录信息未配置，请检查 HEYGEN_LOGIN_EMAIL 和 HEYGEN_LOGIN_PASSWORD 设置');
+    throw new Error('HeyGen 登录信息未配置，请检查 HEYGEN_LOGIN_EMAIL 和 HEYGEN_LOGIN_PASSWORD 设置');
   }
   
   logger.info('启动浏览器 - 从无头模式改为显示模式');
@@ -132,7 +129,7 @@ export async function loginToHeygen(): Promise<{browser: any, page: any}> {
 
     // 导航到登录页面并等待网络请求完成
     await page.goto(`${HEYGEN_BASE_URL}/login`, {
-      waitUntil: 'networkidle0',
+      waitUntil: 'networkidle2',
       timeout: 60000
     })
 
@@ -144,9 +141,9 @@ export async function loginToHeygen(): Promise<{browser: any, page: any}> {
     await page.evaluate(() => new Promise(r => setTimeout(r, 1000)))
 
     await page.keyboard.press('Tab')
-    await page.keyboard.type(config.heygen_login_email || '')
+    await page.keyboard.type(config.HEYGEN_LOGIN_EMAIL || '')
     await page.keyboard.press('Tab')
-    await page.keyboard.type(config.heygen_login_password || '')
+    await page.keyboard.type(config.HEYGEN_LOGIN_PASSWORD || '')
 
     // 提交登录表单并等待导航完成
     await Promise.all([

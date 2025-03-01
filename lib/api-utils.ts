@@ -1,6 +1,6 @@
 import { logger } from './logger';
 import { setupProxy } from './proxy';
-import axios, { AxiosError, AxiosRequestConfig } from 'axios';
+import axios, { AxiosError, AxiosRequestConfig, AxiosInstance } from 'axios';
 
 interface ApiCallOptions {
   maxRetries?: number;
@@ -25,28 +25,16 @@ export async function apiCallWithRetry(
   } = options;
   
   // 获取代理设置
-  let http = axios;
+  let http: AxiosInstance = axios.create();
   if (useProxy) {
     try {
-      // 获取设置
-      const response = await axios.get('/api/settings');
-      const settings = response.data.reduce((acc, item) => {
-        acc[item.id] = item.value;
-        return acc;
-      }, {});
-      
-      // 配置代理
-      const proxyConfig = {
-        proxyEnabled: settings.PROXY_ENABLED === 'true',
-        proxyUrl: settings.PROXY_URL,
-        proxyUsername: settings.PROXY_USERNAME,
-        proxyPassword: settings.PROXY_PASSWORD,
-        verifySSL: settings.VERIFY_SSL !== 'false'
-      };
+      // 直接获取代理配置
+      const { getActiveProxyConfig } = await import('./proxy');
+      const proxyConfig = await getActiveProxyConfig();
       
       http = setupProxy(proxyConfig);
     } catch (error) {
-      logger.error('获取代理设置失败，使用直接连接', error);
+      logger.error('获取代理设置失败，使用直接连接', error instanceof Error ? error.message : String(error));
     }
   }
   
@@ -75,7 +63,7 @@ export async function apiCallWithRetry(
         url,
         ...config
       });
-    } catch (error) {
+    } catch (error: any) {
       lastError = error;
       
       // 记录错误
@@ -105,4 +93,4 @@ export async function apiCallWithRetry(
   }
   
   throw lastError;
-} 
+}

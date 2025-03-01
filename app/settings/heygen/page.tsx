@@ -1,6 +1,6 @@
 'use client';
 
-import SettingsPageTemplate from '../components/SettingsPageTemplate';
+import SettingsPageTemplate, { SettingField } from '../components/SettingsPageTemplate';
 import { SETTING_CATEGORIES } from '@/lib/settings';
 import { useNotification } from '../../components/NotificationContext';
 import { useState } from 'react';
@@ -12,16 +12,16 @@ export default function HeyGenSettingsPage() {
   const [isTesting, setIsTesting] = useState(false);
   
   // 将所有字段组织成分组结构
-  const fields = [
+  const fields: SettingField[] = [
     // HeyGen 相关设置
     {
-      id: 'heygen_login_email',
+      id: 'HEYGEN_LOGIN_EMAIL',
       label: 'HeyGen 登录邮箱',
       type: 'email',
       description: 'HeyGen平台的登录邮箱'
     },
     {
-      id: 'heygen_login_password',
+      id: 'HEYGEN_LOGIN_PASSWORD',
       label: 'HeyGen 登录密码',
       type: 'password',
       description: 'HeyGen平台的登录密码'
@@ -29,33 +29,33 @@ export default function HeyGenSettingsPage() {
     
     // 邮件服务器设置
     {
-      id: 'heygen_email_host',
+      id: 'HEYGEN_EMAIL_HOST',
       label: '邮件服务器地址',
       type: 'text',
       placeholder: 'imap.example.com',
       description: 'IMAP邮件服务器地址'
     },
     {
-      id: 'heygen_email_port',
+      id: 'HEYGEN_EMAIL_PORT',
       label: '服务器端口',
       type: 'text',
       placeholder: '993',
       description: 'IMAP服务器端口，通常为993'
     },
     {
-      id: 'heygen_email_user',
+      id: 'HEYGEN_EMAIL_USER',
       label: '邮箱账号',
       type: 'email',
       description: '用于接收HeyGen通知的邮箱账号'
     },
     {
-      id: 'heygen_email_password',
+      id: 'HEYGEN_EMAIL_PASSWORD',
       label: '邮箱密码',
       type: 'password',
       description: '邮箱密码或应用专用密码'
     },
     {
-      id: 'heygen_email_tls',
+      id: 'HEYGEN_EMAIL_TLS',
       label: '使用TLS加密',
       type: 'checkbox',
       description: '是否使用TLS加密连接（推荐开启）'
@@ -63,7 +63,7 @@ export default function HeyGenSettingsPage() {
     
     // 定时任务设置
     {
-      id: 'heygen_check_interval',
+      id: 'HEYGEN_CHECK_INTERVAL',
       label: '邮件检查间隔 (Cron格式)',
       type: 'text',
       placeholder: '*/30 * * * *',
@@ -114,12 +114,12 @@ export default function HeyGenSettingsPage() {
       showNotification('info', '正在测试邮件服务器连接...');
       
       // 获取当前设置值
-      const response = await fetch('/api/settings?keys=heygen_email_host,heygen_email_port,heygen_email_user,heygen_email_password,heygen_email_tls');
+      const response = await fetch('/api/settings?keys=HEYGEN_EMAIL_HOST,HEYGEN_EMAIL_PORT,HEYGEN_EMAIL_USER,HEYGEN_EMAIL_PASSWORD,HEYGEN_EMAIL_TLS');
       const data = await response.json();
       
       // 提取设置
-      const settings = {};
-      data.settings.forEach(setting => {
+      const settings: Record<string, string> = {};
+      data.settings.forEach((setting: { id: string, value: string }) => {
         settings[setting.id] = setting.value;
       });
       
@@ -128,11 +128,11 @@ export default function HeyGenSettingsPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          host: settings.heygen_email_host,
-          port: parseInt(settings.heygen_email_port) || 993,
-          user: settings.heygen_email_user,
-          password: settings.heygen_email_password,
-          tls: settings.heygen_email_tls === 'true'
+          host: settings.HEYGEN_EMAIL_HOST,
+          port: parseInt(settings.HEYGEN_EMAIL_PORT) || 993,
+          user: settings.HEYGEN_EMAIL_USER,
+          password: settings.HEYGEN_EMAIL_PASSWORD,
+          tls: settings.HEYGEN_EMAIL_TLS === 'true'
         })
       });
       

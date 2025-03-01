@@ -5,7 +5,7 @@
 
 'use client';
 
-import SettingsPageTemplate from '../components/SettingsPageTemplate';
+import SettingsPageTemplate, { SettingField } from '../components/SettingsPageTemplate';
 import { SETTING_CATEGORIES } from '@/lib/settings';
 
 /**
@@ -15,7 +15,7 @@ import { SETTING_CATEGORIES } from '@/lib/settings';
  */
 export default function ProxySettingsPage() {
   // 定义代理设置字段配置
-  const fields = [
+  const fields: SettingField[] = [
     {
       id: 'PROXY_ENABLED',
       label: '启用代理',

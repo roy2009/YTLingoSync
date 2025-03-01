@@ -1,4 +1,5 @@
 import { PrismaClient } from '@prisma/client';
+import { getAllEnvSettings } from '../lib/env-service';
 
 const prisma = new PrismaClient();
 
@@ -6,10 +7,10 @@ async function main() {
   console.log('正在查询数据库内容...\n');
 
   // 查询所有设置
-  const settings = await prisma.setting.findMany();
+  const settingsObj = await getAllEnvSettings();
   console.log('===== 系统设置 =====');
-  settings.forEach(setting => {
-    console.log(`${setting.id}: ${setting.value}`);
+  Object.entries(settingsObj).forEach(([key, value]) => {
+    console.log(`${key}: ${value}`);
   });
   
   // 查询所有订阅

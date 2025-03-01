@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/logger';
-import { syncSubscription } from '@/lib/video-processor';
+import { syncSubscription } from '@/lib/sync-service';
 
 export async function POST(request: NextRequest) {
   try {

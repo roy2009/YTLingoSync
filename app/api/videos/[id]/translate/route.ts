@@ -54,11 +54,11 @@ export async function POST(
       message: '翻译任务已提交',
       status: 'processing'
     });
-  } catch (error) {
-    logger.error('cache error 提交翻译任务失败', error);
+  } catch (error: unknown) {
+    logger.error('cache error 提交翻译任务失败', error instanceof Error ? error.message : String(error));
     return NextResponse.json({
       error: '提交翻译任务失败',
-      message: error.message
+      message: error instanceof Error ? error.message : '未知错误'
     }, { status: 500 });
   }
 }

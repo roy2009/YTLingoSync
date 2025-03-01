@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { translateText, translateLongText } from '@/lib/translate';
 import { logger } from '@/lib/logger';
+import { translateText, translateLongText } from '@/lib/translate';
+import { getAllEnvSettings } from '@/lib/env-service';
 
 export async function POST(request: NextRequest) {
   try {
     // 查找所有没有中文标题的视频
     const videos = await prisma.video.findMany({
-      where: { 
+      where: {
         OR: [
           { titleZh: null },
-          { descriptionZh: null, description: { not: null } }
-        ]
+          { titleZh: '' },
+          { descriptionZh: null },
+          { descriptionZh: '' }
+        ],
+        translationStatus: { not: 'processing' }
       },
       take: 10  // 每次修复10个
     });
@@ -24,11 +28,7 @@ export async function POST(request: NextRequest) {
     }
     
     // 获取翻译服务设置
-    const settings = await prisma.setting.findMany();
-    const settingsObj = settings.reduce((acc, item) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
+    const settingsObj = await getAllEnvSettings();
     
     const translationService = settingsObj.TRANSLATION_SERVICE || 'none';
     

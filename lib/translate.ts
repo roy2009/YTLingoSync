@@ -1,9 +1,12 @@
 import axios from 'axios';
 import { setupProxy } from './proxy';
 import { logger } from './logger';
-import { prisma } from './prisma';
-import { submitVideoToHeyGen } from '@/lib/heygen';
 import { submitToHeygen } from '@/lib/heygen';
+import { getLanguageCode } from './language-mapper';
+import { PrismaClient } from '@prisma/client';
+import { getAllEnvSettings } from './env-service';
+
+const prismaClient = new PrismaClient();
 
 // 添加类型定义
 interface TranslationOptions {
@@ -18,7 +21,7 @@ interface TranslationOptions {
  * @param targetLang 目标语言，默认中文
  * @returns 翻译后的文本
  */
-export async function translateText(text: string, targetLang: string = 'zh'): Promise<string> {
+export async function translateText(text: string, targetLang: string = 'Chinese'): Promise<string> {
   try {
     if (isMostlyChinese(text)) {
       logger.info('文本已经是中文，跳过翻译:', text.substring(0, 30));
@@ -28,11 +31,7 @@ export async function translateText(text: string, targetLang: string = 'zh'): Pr
     logger.info(`开始翻译文本: "${text.substring(0, 30)}..."，目标语言: ${targetLang}`);
     
     // 获取设置
-    const settings = await prisma.setting.findMany();
-    const settingsObj = settings.reduce((acc, item) => {
-      acc[item.id] = item.value;
-      return acc;
-    }, {});
+    const settingsObj = await getAllEnvSettings();
     
     const translationService = settingsObj.TRANSLATION_SERVICE || 'none';
     logger.info(`使用翻译服务: ${translationService}`);
@@ -56,8 +55,12 @@ export async function translateText(text: string, targetLang: string = 'zh'): Pr
     // 使用Google免费翻译API
     try {
       logger.info('正在调用谷歌免费翻译API...');
+      // 将语言名称转换为语言代码
+      const langCode = getLanguageCode(targetLang);
+      logger.info(`将语言名称 ${targetLang} 转换为语言代码 ${langCode}`);
+      
       const response = await http.get(
-        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`
+        `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${langCode}&dt=t&q=${encodeURIComponent(text)}`
       );
       
       logger.info(`翻译API响应: ${JSON.stringify(response.data).substring(0, 200)}...`);
@@ -112,7 +115,7 @@ function isMostlyChinese(text: string): boolean {
  * @param targetLang 目标语言
  * @returns 翻译后的文本
  */
-export async function translateLongText(text: string, targetLang: string = 'zh-CN'): Promise<string> {
+export async function translateLongText(text: string, targetLang: string = 'Chinese'): Promise<string> {
   if (!text || text.trim() === '') return '';
   
   // 如果文本很短，直接翻译
@@ -153,7 +156,7 @@ export async function translateLongText(text: string, targetLang: string = 'zh-C
  */
 export async function submitVideoForTranslation(videoId: string, options: TranslationOptions = {}) {
   // 获取视频信息
-  const video = await prisma.video.findUnique({
+  const video = await prismaClient.video.findUnique({
     where: { id: videoId }
   });
   
@@ -180,4 +183,4 @@ export async function submitVideoForTranslation(videoId: string, options: Transl
   }
   
   return 'submitted';
-} 
+}
