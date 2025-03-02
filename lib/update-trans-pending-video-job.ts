@@ -86,7 +86,7 @@ export async function startTransPendingVideoUpdateJob() {
         await updateTaskStatus(TASK_NAMES.TRANS_PENDING_VIDEO, {
           lastRun: new Date(),
           nextRun: nextRunTime,
-          status: 'idle',
+          status: 'success',
           message: `已翻译 ${updatedCount} 条翻译排队`
         });
         

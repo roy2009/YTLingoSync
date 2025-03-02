@@ -105,29 +105,7 @@ YTLingoSync/
 
 ## 配置说明
 
-在`.env`文件中配置以下变量：
-
-```
-# 数据库配置
-DATABASE_URL="file:./dev.db"
-
-# YouTube API配置
-YOUTUBE_API_KEY=your_youtube_api_key_here
-
-# Heygen配置
-HEYGEN_LOGIN_EMAIL=your_heygen_email_here
-HEYGEN_LOGIN_PASSWORD=your_heygen_password_here
-
-# 系统设置
-SYNC_INTERVAL_MINUTES=15
-MAX_CONCURRENT_TRANSLATIONS=2
-TRANSLATION_SERVICE=google
-
-# 邮件服务配置
-EMAIL_SERVER=imap.example.com
-EMAIL_USER=your_email@example.com
-EMAIL_PASSWORD=your_email_password
-```
+在`.env`文件中配置，参考文件`.env.example`
 
 ## 使用指南
 

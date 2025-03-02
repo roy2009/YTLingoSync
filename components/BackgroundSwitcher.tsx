@@ -5,9 +5,17 @@ import StarfieldBackground from './StarfieldBackground';
 import MatrixCodeRain from './MatrixCodeRain';
 import GalaxyBackground from './GalaxyBackground';
 import NetworkFlowBackground from './NetworkFlowBackground';
+import ParticleWaveBackground from './ParticleWaveBackground';
+import NeonLightsBackground from './NeonLightsBackground';
+import PixelRainBackground from './PixelRainBackground';
+import GeometricTransformBackground from './GeometricTransformBackground';
+import FireEffectBackground from './FireEffectBackground';
+import DNAHelixBackground from './DNAHelixBackground';
 
 // 创建背景上下文
-type BackgroundType = 'starfield' | 'matrix' | 'galaxy' | 'network';
+type BackgroundType = 'starfield' | 'matrix' | 'galaxy' | 'network' | 
+                     'particlewave' | 'neonlights' | 'pixelrain' | 
+                     'geometric' | 'fire' | 'dnahelix';
 
 interface BackgroundContextType {
   background: BackgroundType;
@@ -32,7 +40,11 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
     
     // 从本地存储加载背景设置
     const savedBackground = localStorage.getItem('background');
-    if (savedBackground && ['starfield', 'matrix', 'galaxy', 'network'].includes(savedBackground)) {
+    if (savedBackground && [
+      'starfield', 'matrix', 'galaxy', 'network',
+      'particlewave', 'neonlights', 'pixelrain', 
+      'geometric', 'fire', 'dnahelix'
+    ].includes(savedBackground)) {
       setBackground(savedBackground as BackgroundType);
     }
   }, []);
@@ -53,6 +65,12 @@ export function BackgroundProvider({ children }: { children: ReactNode }) {
           {background === 'matrix' && <MatrixCodeRain />}
           {background === 'galaxy' && <GalaxyBackground />}
           {background === 'network' && <NetworkFlowBackground />}
+          {background === 'particlewave' && <ParticleWaveBackground />}
+          {background === 'neonlights' && <NeonLightsBackground />}
+          {background === 'pixelrain' && <PixelRainBackground />}
+          {background === 'geometric' && <GeometricTransformBackground />}
+          {background === 'fire' && <FireEffectBackground />}
+          {background === 'dnahelix' && <DNAHelixBackground />}
         </>
       )}
     </BackgroundContext.Provider>
@@ -73,7 +91,13 @@ export default function BackgroundSwitcher() {
     { id: 'starfield', name: '星空', icon: '✨' },
     { id: 'matrix', name: '矩阵', icon: '🖥️' },
     { id: 'galaxy', name: '银河', icon: '🌌' },
-    { id: 'network', name: '网络', icon: '🕸️' }
+    { id: 'network', name: '网络', icon: '🕸️' },
+    { id: 'particlewave', name: '粒子波', icon: '🌊' },
+    { id: 'neonlights', name: '霓虹灯', icon: '💡' },
+    { id: 'pixelrain', name: '像素雨', icon: '🎮' },
+    { id: 'geometric', name: '几何变换', icon: '📐' },
+    { id: 'fire', name: '火焰', icon: '🔥' },
+    { id: 'dnahelix', name: 'DNA螺旋', icon: '🧬' }
   ];
   
   // 点击外部关闭下拉菜单
