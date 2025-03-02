@@ -163,16 +163,33 @@ function VideosContent() {
     setIsClient(true);
   }, []);
 
-  // 同步URL参数到状态
+  // 同步URL参数到状态 - 优化以确保参数被正确应用
   useEffect(() => {
+    console.log('检测到URL参数变化:', {
+      subscriptionId: searchParams.get('subscriptionId'),
+      timeRange: searchParams.get('timeRange'),
+      q: searchParams.get('q'),
+      translationStatus: searchParams.get('translationStatus')
+    });
+    
     const subId = searchParams.get('subscriptionId');
     const time = searchParams.get('timeRange');
-    const query = searchParams.get('q');
+    const query = searchParams.get('q') || '';
     const status = searchParams.get('translationStatus');
+    
+    // 重要：始终设置状态值，即使是空值也要设置
+    // 这样可以确保状态与URL参数保持一致
     setCurrentSubscription(subId);
     setCurrentTimeRange(time);
-    setSearchQuery(query || '');
+    setSearchQuery(query);
     setCurrentTranslationStatus(status);
+    
+    // 保存到本地存储 - 只保存非空值
+    if (subId) localStorage.setItem('videoFilters_subscription', subId);
+    if (time) localStorage.setItem('videoFilters_timeRange', time);
+    if (query) localStorage.setItem('videoFilters_searchQuery', query);
+    if (status) localStorage.setItem('videoFilters_translationStatus', status);
+    
   }, [searchParams]);
 
   // 获取所有订阅
@@ -193,31 +210,49 @@ function VideosContent() {
     fetchSubscriptions();
   }, []);
 
-  // 获取视频
+  // 获取视频 - 修改为直接使用searchParams而不是依赖状态
   useEffect(() => {
     async function fetchVideos() {
-
+      console.log('获取视频 - 当前筛选条件:', {
+        subscription: currentSubscription,
+        timeRange: currentTimeRange,
+        translationStatus: currentTranslationStatus,
+        searchQuery: searchQuery
+      });
       
       setLoading(true);
       setError(null);
       
       try {
-        let url = '/api/videos?';
+        // 构建查询参数 - 直接从URL和状态中获取参数
         const params = new URLSearchParams();
         
-        if (currentSubscription) {
-          params.append('subscriptionId', currentSubscription);
+        // 优先使用URL中的参数，如果没有则使用状态中的值
+        const subId = searchParams.get('subscriptionId') || currentSubscription;
+        const timeRange = searchParams.get('timeRange') || currentTimeRange;
+        const status = searchParams.get('translationStatus') || currentTranslationStatus;
+        const queryParam = searchParams.get('q') || searchQuery;
+        
+        if (subId) {
+          console.log('应用订阅ID筛选:', subId);
+          params.append('subscriptionId', subId);
         }
         
-        if (currentTimeRange) {
-          params.append('timeRange', currentTimeRange);
+        if (timeRange) {
+          params.append('timeRange', timeRange);
         }
         
-        if (currentTranslationStatus) {
-          params.append('translationStatus', currentTranslationStatus);
+        if (status) {
+          // 处理特殊的 null 状态值
+          if (status === 'null') {
+            params.append('translationStatus', 'null');
+          } else {
+            params.append('translationStatus', status);
+          }
         }
         
         const apiUrl = params.toString() ? `/api/videos?${params.toString()}` : '/api/videos';
+        console.log('API请求URL:', apiUrl);
         
         const response = await fetch(apiUrl);
         
@@ -268,13 +303,13 @@ function VideosContent() {
           setVideos(processedData);
           
           // 如果有搜索关键词，在前端进行筛选
-          if (searchQuery) {
-            const query = searchQuery.toLowerCase();
-            const filtered = processedData.filter(video => {
-              const titleMatch = (video.title?.toLowerCase().includes(query) || false) || 
-                               (video.titleZh?.toLowerCase().includes(query) || false);
-              const descMatch = (video.description?.toLowerCase().includes(query) || false) || 
-                              (video.descriptionZh?.toLowerCase().includes(query) || false);
+          if (queryParam) {
+            const searchTermLower = queryParam.toLowerCase();
+            const filtered = processedData.filter((video: Video) => {
+              const titleMatch = (video.title?.toLowerCase().includes(searchTermLower) || false) || 
+                               (video.titleZh?.toLowerCase().includes(searchTermLower) || false);
+              const descMatch = (video.description?.toLowerCase().includes(searchTermLower) || false) || 
+                              (video.descriptionZh?.toLowerCase().includes(searchTermLower) || false);
               return titleMatch || descMatch;
             });
             setVideos(filtered);
@@ -339,30 +374,36 @@ function VideosContent() {
     }
 
     fetchVideos();
-  }, [currentSubscription, currentTimeRange, currentTranslationStatus, searchQuery]);
+  }, [currentSubscription, currentTimeRange, currentTranslationStatus, searchQuery, searchParams]);
 
   // 确保channelIds被正确提取和格式化
   const channelIds = Array.from(new Set(videos.map(video => video.channelId).filter((id): id is string => Boolean(id))));
   
   // 处理订阅筛选变化
   const handleSubscriptionChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value === "" ? null : e.target.value;
-    setCurrentSubscription(value);
+    const value = e.target.value === "" ? undefined : e.target.value;
+    setCurrentSubscription(value || null);
     updateFiltersInUrl({ subscriptionId: value });
+    // 保存到本地存储
+    localStorage.setItem('videoFilters_subscription', value || '');
   };
   
   // 处理时间范围筛选变化
   const handleTimeRangeChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value === "" ? null : e.target.value;
-    setCurrentTimeRange(value);
+    const value = e.target.value === "" ? undefined : e.target.value;
+    setCurrentTimeRange(value || null);
     updateFiltersInUrl({ timeRange: value });
+    // 保存到本地存储
+    localStorage.setItem('videoFilters_timeRange', value || '');
   };
   
   // 处理翻译状态筛选变化
   const handleTranslationStatusChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value === "" ? null : e.target.value;
-    setCurrentTranslationStatus(value);
+    const value = e.target.value === "" ? undefined : e.target.value;
+    setCurrentTranslationStatus(value || null);
     updateFiltersInUrl({ translationStatus: value });
+    // 保存到本地存储
+    localStorage.setItem('videoFilters_translationStatus', value || '');
   };
   
   // 处理搜索输入变化
@@ -374,7 +415,9 @@ function VideosContent() {
   
   // 处理搜索提交
   const handleSearchSubmit = () => {
-    updateFiltersInUrl({ q: searchQuery });
+    updateFiltersInUrl({ q: searchQuery || undefined });
+    // 保存到本地存储
+    localStorage.setItem('videoFilters_searchQuery', searchQuery);
   };
   
   // 处理搜索框按键事件
@@ -433,19 +476,19 @@ function VideosContent() {
     // 保留现有参数
     const currentSubId = updates.subscriptionId !== undefined 
       ? updates.subscriptionId 
-      : currentSubscription;
+      : currentSubscription || undefined;
     
     const currentTime = updates.timeRange !== undefined 
       ? updates.timeRange 
-      : currentTimeRange;
+      : currentTimeRange || undefined;
     
     const currentQuery = updates.q !== undefined
       ? updates.q
-      : searchQuery;
+      : searchQuery || undefined;
       
     const currentStatus = updates.translationStatus !== undefined
       ? updates.translationStatus
-      : currentTranslationStatus;
+      : currentTranslationStatus || undefined;
     
     if (currentSubId) params.append('subscriptionId', currentSubId);
     if (currentTime) params.append('timeRange', currentTime);
@@ -464,14 +507,14 @@ function VideosContent() {
     
     const statuses: Record<string, { label: string; color: string }> = {
       'none': { label: '未翻译', color: 'gray' },
-      'skipped': { label: '未翻译', color: 'gray' },
-      'pending': { label: '等待中', color: 'yellow' },
+      'skipped': { label: '已跳过', color: 'gray' },
+      'pending': { label: '等待翻译', color: 'yellow' },
       'processing': { label: '翻译中', color: 'blue' },
-      'completed': { label: '已翻译', color: 'green' },
+      'completed': { label: '翻译完成', color: 'green' },
       'failed': { label: '翻译失败', color: 'red' }
     };
     
-    return statuses[video.translationStatus] || { label: '未知', color: 'gray' };
+    return statuses[video.translationStatus] || { label: '未知状态', color: 'gray' };
   };
 
   // 格式化时长
@@ -552,6 +595,41 @@ function VideosContent() {
     setHoveredPosition({ x: e.clientX, y: e.clientY });
   };
 
+  // 添加一个useEffect用于从localStorage加载保存的筛选条件
+  useEffect(() => {
+    if (typeof window !== 'undefined' && isClient) {
+      // 检查URL是否包含任何筛选参数
+      const hasUrlParams = searchParams.has('subscriptionId') || 
+                           searchParams.has('timeRange') || 
+                           searchParams.has('q') || 
+                           searchParams.has('translationStatus');
+      
+      // 只有当URL没有任何参数时，才尝试从localStorage加载
+      if (!hasUrlParams) {
+        try {
+          const savedSubscription = localStorage.getItem('videoFilters_subscription');
+          const savedTimeRange = localStorage.getItem('videoFilters_timeRange');
+          const savedTranslationStatus = localStorage.getItem('videoFilters_translationStatus');
+          const savedSearchQuery = localStorage.getItem('videoFilters_searchQuery');
+          
+          // 如果有任何保存的值，更新URL以反映这些值
+          if (savedSubscription || savedTimeRange || savedTranslationStatus || savedSearchQuery) {
+            console.log('从本地存储加载筛选条件并更新URL');
+            updateFiltersInUrl({
+              subscriptionId: savedSubscription || undefined,
+              timeRange: savedTimeRange || undefined,
+              translationStatus: savedTranslationStatus || undefined,
+              q: savedSearchQuery || undefined
+            });
+          }
+        } catch (error) {
+          console.error('从本地存储加载筛选条件失败:', error);
+        }
+      }
+    }
+    // 这个useEffect只在组件挂载时运行一次
+  }, [isClient, searchParams]);
+
   if (!isClient) {
     return null;
   }
@@ -629,11 +707,12 @@ function VideosContent() {
               className="form-select"
             >
               <option value="">所有状态</option>
-              <option value="pending">等待中</option>
-              <option value="processing">处理中</option>
-              <option value="completed">已完成</option>
-              <option value="failed">失败</option>
-              <option value="null">未翻译</option>
+              <option value="pending">等待翻译</option>
+              <option value="processing">翻译处理中</option>
+              <option value="completed">翻译完成</option>
+              <option value="failed">翻译失败</option>
+              <option value="none">未翻译</option>
+              <option value="null">无状态</option>
             </select>
           </div>
         </div>
