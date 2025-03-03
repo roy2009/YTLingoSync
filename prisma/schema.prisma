@@ -27,7 +27,7 @@ model Subscription {
 
 model Video {
   id            String        @id @default(cuid())
-  youtubeId     String        @unique
+  youtubeId     String        
   title         String
   titleZh       String?       // 中文标题
   description   String?       // 原始描述
@@ -46,6 +46,7 @@ model Video {
   channelId     String?       // 频道ID
   channelTitle  String?       // 频道标题
 
+  @@unique([youtubeId, subscriptionId])  // 添加复合唯一约束，允许相同视频存在于不同订阅
   @@index([subscriptionId])
   @@index([youtubeId])
   @@index([translationStatus])

@@ -51,14 +51,82 @@ export async function syncSubscriptionImpl(subscription: Subscription, logs: str
       where: {
         youtubeId: {
           in: newVideos.map((v: any) => v.youtubeId)
-        }
+        },
+        subscriptionId: subscriptionId // 添加订阅ID筛选，只查找当前订阅中的视频
       },
       select: { youtubeId: true }
     })).map(v => v.youtubeId);
     
+    // 输出详细的调试信息
+    logger.debug(`[调试] 从YouTube获取的视频数: ${newVideos.length}`);
+    logger.debug(`[调试] 在当前订阅中已存在的视频数: ${existingVideoIds.length}`);
+    
+    // 从数据库获取更完整的信息用于调试
+    const existingVideosDetail = await prisma.video.findMany({
+      where: {
+        youtubeId: {
+          in: newVideos.map((v: any) => v.youtubeId)
+        }
+      },
+      select: { 
+        id: true,
+        youtubeId: true, 
+        title: true,
+        subscriptionId: true 
+      }
+    });
+    
+    // 检查数据库中是否有任何视频与当前视频的youtubeId匹配但不属于当前订阅
+    logger.debug(`[调试] 数据库中匹配的视频总数(所有订阅): ${existingVideosDetail.length}`);
+    
+    const videosInOtherSubscriptions = existingVideosDetail.filter(v => v.subscriptionId !== subscriptionId);
+    logger.debug(`[调试] 视频在其他订阅中存在的数量: ${videosInOtherSubscriptions.length}`);
+    
+    if (videosInOtherSubscriptions.length > 0) {
+      logger.debug(`[调试] 在其他订阅中存在的视频: ${JSON.stringify(videosInOtherSubscriptions)}`);
+    }
+    
+    // 检查schema定义中是否有唯一约束阻止相同youtubeId重复添加
+    logger.debug(`[调试] 执行额外测试查询...`);
+    try {
+      // 尝试查找一个示例视频，看看它是否在多个订阅中都存在
+      if (existingVideosDetail.length > 0) {
+        const sampleYoutubeId = existingVideosDetail[0].youtubeId;
+        const duplicateCheck = await prisma.video.findMany({
+          where: { youtubeId: sampleYoutubeId },
+          select: { id: true, youtubeId: true, subscriptionId: true }
+        });
+        
+        logger.debug(`[调试] 样本视频 "${sampleYoutubeId}" 在数据库中的出现次数: ${duplicateCheck.length}`);
+        if (duplicateCheck.length > 1) {
+          logger.debug(`[调试] 数据库允许相同的youtubeId存在于不同的订阅中`);
+        } else {
+          logger.debug(`[调试] 警告: 数据库可能不允许相同的youtubeId存在于不同的订阅中`);
+        }
+        
+        logger.debug(`[调试] 样本视频详情: ${JSON.stringify(duplicateCheck)}`);
+      }
+    } catch (error) {
+      logger.error(`[调试] 测试查询出错: ${error instanceof Error ? error.message : String(error)}`);
+    }
+    
+    // 为每个YouTube视频检查过滤原因
+    for (const video of newVideos) {
+      const isFiltered = existingVideoIds.includes(video.youtubeId);
+      if (isFiltered) {
+        const matchingDbRecords = existingVideosDetail.filter(v => v.youtubeId === video.youtubeId);
+        logger.debug(`[调试] 视频被过滤: ${video.title} (ID: ${video.youtubeId})`);
+        logger.debug(`[调试] 数据库中的匹配记录: ${JSON.stringify(matchingDbRecords)}`);
+      }
+    }
+    
     // 过滤出尚未添加的视频
     let videosToAdd = newVideos.filter((v: any) => !existingVideoIds.includes(v.youtubeId));
     logs.push(`过滤后有 ${videosToAdd.length} 个新视频需要添加`);
+    
+    // 输出被过滤和保留的ID列表
+    logger.debug(`[调试] 被过滤的视频ID: ${newVideos.filter((v: any) => existingVideoIds.includes(v.youtubeId)).map((v: any) => v.youtubeId).join(', ')}`);
+    logger.debug(`[调试] 将添加的视频ID: ${videosToAdd.map((v: any) => v.youtubeId).join(', ')}`);
     
     if (videosToAdd.length === 0) {
       logs.push('所有视频已在数据库中');
@@ -138,7 +206,7 @@ export async function syncSubscriptionImpl(subscription: Subscription, logs: str
         (!subscription.maxDurationForTranslation || 
          durationInMinutes < subscription.maxDurationForTranslation);
 
-      logger.debug('设置状态', shouldTranslate, durationInMinutes , subscription.autoTranslate, subscription.maxDurationForTranslation);
+      logger.debug(`设置状态: shouldTranslate=${shouldTranslate}, durationInMinutes=${durationInMinutes}, autoTranslate=${subscription.autoTranslate}, maxDuration=${subscription.maxDurationForTranslation}`);
 
       // 设置翻译状态
       const translationStatus = shouldTranslate ? 'pending' : 'none';
@@ -163,13 +231,50 @@ export async function syncSubscriptionImpl(subscription: Subscription, logs: str
     
     // 批量创建视频
     try {
-      await prisma.video.createMany({
-        data: videosToCreate
+      // 使用事务确保原子性
+      const creationResult = await prisma.$transaction(async (tx) => {
+        let successCount = 0;
+        const errors = [];
+        
+        // 单独创建每个视频以获取更好的错误处理
+        for (const videoData of videosToCreate) {
+          try {
+            await tx.video.create({
+              data: videoData
+            });
+            successCount++;
+          } catch (videoError) {
+            // 记录错误但继续处理其他视频
+            const errorMsg = videoError instanceof Error ? videoError.message : String(videoError);
+            errors.push(`无法创建视频 ${videoData.title} (${videoData.youtubeId}): ${errorMsg}`);
+            logger.warn(`创建视频失败: ${videoData.youtubeId}`, { error: errorMsg });
+          }
+        }
+        
+        return { successCount, errors };
+      }, {
+        timeout: 30000 // 30秒超时
       });
-      logger.debug(`同步完成: ${subscription.name}, 添加了 ${videosToCreate.length} 个视频`);
-      logs.push(`成功添加了 ${videosToCreate.length} 个视频到数据库`);
+      
+      logger.debug(`同步完成: ${subscription.name}, 成功添加: ${creationResult.successCount}/${videosToCreate.length} 个视频`);
+      
+      if (creationResult.errors.length > 0) {
+        logger.warn(`同步过程中有 ${creationResult.errors.length} 个错误`);
+        creationResult.errors.forEach(err => logger.warn(`- ${err}`));
+        logs.push(`部分成功: 添加了 ${creationResult.successCount}/${videosToCreate.length} 个视频，有 ${creationResult.errors.length} 个错误`);
+      } else {
+        logs.push(`成功添加了 ${creationResult.successCount} 个视频到数据库`);
+      }
+      
+      // 更新最后同步时间
+      await prisma.subscription.update({
+        where: { id: subscriptionId },
+        data: { lastSync: new Date() }
+      });
+      
+      return { syncedCount: creationResult.successCount };
     } catch (error) {
-      // 处理唯一约束错误
+      // 处理唯一约束错误 (作为后备处理方式)
       if (error instanceof Error && error.message.includes('Unique constraint failed')) {
         logger.warn(`创建视频时发生唯一约束冲突，将尝试逐个创建`);
         logs.push(`创建视频时发生重复记录冲突，尝试逐个添加非重复视频`);
@@ -179,8 +284,13 @@ export async function syncSubscriptionImpl(subscription: Subscription, logs: str
         for (const video of videosToCreate) {
           try {
             // 再次检查视频是否已存在
-            const exists = await prisma.video.findUnique({
-              where: { youtubeId: video.youtubeId },
+            const exists = await prisma.video.findFirst({
+              where: { 
+                AND: [
+                  { youtubeId: video.youtubeId },
+                  { subscriptionId: video.subscriptionId }
+                ]
+              },
               select: { id: true }
             });
             
@@ -192,6 +302,12 @@ export async function syncSubscriptionImpl(subscription: Subscription, logs: str
             logger.warn(`跳过添加视频 ${video.youtubeId}: ${innerError instanceof Error ? innerError.message : String(innerError)}`);
           }
         }
+        
+        // 更新最后同步时间
+        await prisma.subscription.update({
+          where: { id: subscriptionId },
+          data: { lastSync: new Date() }
+        });
         
         logger.debug(`同步完成: ${subscription.name}, 成功添加了 ${successCount}/${videosToCreate.length} 个视频`);
         logs.push(`通过逐个添加的方式成功添加了 ${successCount}/${videosToCreate.length} 个视频到数据库`);
@@ -261,196 +377,7 @@ export async function syncSubscription(
   }
 }
     
-/*
-    const { id: subscriptionId, type, sourceId, name } = subscription;
-    
-    logger.debug(`开始同步订阅: ${name} (${subscriptionId})`, { type });
-    logs.push(`正在同步: ${name}`);
-    
-    // 获取现有视频的YouTube ID列表，用于去重
-    const existingVideos = await prisma.video.findMany({
-      where: { subscriptionId },
-      select: { youtubeId: true }
-    });
-    
-    const existingIds = new Set(existingVideos.map(v => v.youtubeId));
-    
-    // 确定是否为首次同步（检查是否有关联的视频）
-    const isFirstSync = existingVideos.length === 0;
-    
-    // 首次同步只获取3条，后续同步获取更多
-    const maxResults = isFirstSync ? 3 : 30;
-    
-    // 获取上次同步时间，如果有的话
-    const publishedAfter = isFirstSync 
-      ? undefined 
-      : new Date(subscription.lastSync);
-    
-    logger.debug(`同步策略: ${isFirstSync ? '首次同步，获取最新3条' : '增量同步'}`);
-    logs.push(`获取${publishedAfter ? '自 ' + publishedAfter.toISOString() + ' 以来' : '所有'}的视频`);
-    
-    // 获取视频数据
-    const videoData = await fetchYouTubeData({
-      type: type as 'channel' | 'playlist',
-      sourceId,
-      maxResults,
-      publishedAfter
-    });
-    
-    logs.push(`从YouTube获取了 ${videoData.length} 个视频`);
-    
-    // 过滤掉已存在的视频
-    let newVideos = videoData.filter((video: any) => !existingIds.has(video.youtubeId));
-    
-    if (newVideos.length === 0) {
-      logger.debug(`订阅 ${name} 没有新视频`);
-      logs.push('没有新的视频需要同步');
-      
-      // 即使没有新视频，也更新同步时间
-      await prisma.subscription.update({
-        where: { id: subscriptionId },
-        data: { lastSync: new Date() }
-      });
-      
-      return { syncedCount: 0, added: 0 };
-    }
-    
-    logs.push(`过滤后有 ${newVideos.length} 个新视频需要添加`);
-    
-    // 如果传入了maxVideos选项，限制处理的视频数量（用于测试）
-    if (options.maxVideos && newVideos.length > options.maxVideos) {
-      logger.debug(`测试模式: 限制处理 ${options.maxVideos} 个视频`);
-      newVideos = newVideos.slice(0, options.maxVideos);
-    }
-    
-    // 获取翻译服务设置
-    const settingsObj = await getAllEnvSettings();
-    const translationService = settingsObj.TRANSLATION_SERVICE || 'none';
-    
-    // 准备要添加的视频数据
-    const videosToCreate = await Promise.all(newVideos.map(async (video: any) => {
-      // 解析视频时长（秒）
-      const durationInSeconds = parseDuration(video.duration);
-      // 转换为分钟
-      const durationInMinutes = durationInSeconds / 60;
-      
-      // 初始化中文标题和描述
-      let titleZh = null;
-      let descriptionZh = null;
-      
-      // 检查是否符合自动翻译条件
-      const shouldTranslate = 
-        subscription.autoTranslate && 
-        translationService !== 'none' && 
-        durationInMinutes > 0 && 
-        (!subscription.maxDurationForTranslation || 
-         durationInMinutes < subscription.maxDurationForTranslation / 60);
-      
-      // 根据订阅设置和全局设置决定是否翻译
-      if (shouldTranslate) {
-        try {
-          // 获取目标语言
-          const targetLanguage = subscription.targetLanguage || 'Chinese';
-          logger.debug(`使用目标语言: ${targetLanguage}`);
-          
-          // 翻译标题
-          logger.debug(`开始翻译视频标题: ${video.title.substring(0, 30)}...`);
-          titleZh = await translateText(video.title, targetLanguage);
-          
-          // 翻译失败时使用原标题
-          if (!titleZh) {
-            logger.warn(`标题翻译失败，使用原标题: ${video.title}`);
-            titleZh = video.title;
-          }
-          
-          // 只有当描述不为空时才翻译描述
-          if (video.description) {
-            logger.debug(`开始翻译视频描述...`);
-            try {
-              descriptionZh = await translateLongText(video.description, targetLanguage);
-              
-              // 翻译失败时使用原描述
-              if (!descriptionZh) {
-                logger.warn('描述翻译失败，使用原描述');
-                descriptionZh = video.description;
-              }
-            } catch (descError) {
-              logger.error('翻译描述失败:', descError instanceof Error ? descError : String(descError));
-              descriptionZh = video.description;
-            }
-          }
-          
-          // 记录翻译结果
-          logger.debug(`标题翻译结果: "${titleZh ? titleZh.substring(0, 30) : 'null'}..."`);
-        } catch (error) {
-          logger.error(`翻译失败:`, error instanceof Error ? error : String(error));
-          // 翻译失败时使用原文
-          titleZh = video.title;
-          descriptionZh = video.description;
-        }
-      } else {
-        if (!subscription.autoTranslate) {
-          logger.debug(`订阅 ${name} 已禁用自动翻译，跳过翻译`);
-        } else if (subscription.maxDurationForTranslation && durationInSeconds > subscription.maxDurationForTranslation) {
-          logger.debug(`视频时长 ${durationInSeconds}秒 超过订阅设置的最大翻译时长 ${subscription.maxDurationForTranslation}秒，跳过翻译`);
-        } else {
-          logger.debug('翻译服务未启用，跳过翻译');
-        }
-      }
-      
-      // 设置翻译状态
-      const translationStatus = shouldTranslate ? 'pending' : 'skipped';
-      
-      return {
-        youtubeId: video.youtubeId,
-        title: video.title,
-        description: video.description,
-        thumbnailUrl: video.thumbnailUrl,
-        publishedAt: video.publishedAt,
-        duration: video.duration,
-        channelId: video.channelId,
-        channelTitle: video.channelTitle,
-        titleZh,
-        descriptionZh,
-        subscriptionId,
-        translationStatus
-      };
-    }));
-    
-    if (videosToCreate.length > 0) {
-      // 记录翻译结果
-      const translatedCount = videosToCreate.filter(v => v.titleZh !== null).length;
-      logs.push(`${translatedCount}/${videosToCreate.length} 个视频标题已翻译`);
-      
-      const translatedDescCount = videosToCreate.filter(v => v.descriptionZh !== null).length;
-      logs.push(`${translatedDescCount}/${videosToCreate.length} 个视频描述已翻译`);
-      
-      // 批量创建视频
-      await prisma.video.createMany({
-        data: videosToCreate
-      });
-    }
-    
-    // 更新订阅的最后同步时间
-    await prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: { lastSync: new Date() }
-    });
-    
-    logger.debug(`同步完成: ${name}，添加了 ${videosToCreate.length} 个视频`);
-    logs.push(`成功添加了 ${videosToCreate.length} 个视频到数据库`);
-    
-    return { 
-      syncedCount: videosToCreate.length,
-      added: videosToCreate.length 
-    };
-  } catch (error) {
-    const errorMsg = error instanceof Error ? error.message : String(error);
-    logger.error(`同步订阅失败:`, error);
-    logs.push(`同步失败: ${errorMsg}`);
-    throw error;
-  }
-    */
+
 
 export async function syncAllSubscriptions() {
   try {
